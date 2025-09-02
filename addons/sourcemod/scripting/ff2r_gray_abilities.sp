@@ -153,6 +153,20 @@ static const char LoopingSounds[][] =
 	""
 };
 
+static const char LoopingRawSounds[][] =
+{
+	"mvm/sentrybuster/mvm_sentrybuster_loop.wav",
+	"mvm/giant_scout/giant_scout_loop.wav",
+	"",
+	"mvm/giant_soldier/giant_soldier_loop.wav",
+	"mvm/giant_demoman/giant_demoman_loop.wav",
+	"",
+	")mvm/giant_heavy/giant_heavy_loop.wav",
+	"mvm/giant_pyro/giant_pyro_loop.wav",
+	"",
+	""
+};
+
 native void FF2_SetClientGlow(int client, float add, float set=-1.0);
 
 Handle SDKEquipWearable;
@@ -630,6 +644,7 @@ public void TF2_OnConditionRemoved(int client, TFCond condition)
 					
 					float pos[3];
 					GetEntPropVector(entity, Prop_Data, "m_vecOrigin", pos);
+					pos[2] += 8.0;
 					TeleportEntity(client, pos);
 					SetEntProp(client, Prop_Send, "m_bDucked", 1);
 					SetEntityFlags(client, GetEntityFlags(client)|FL_DUCKING);
@@ -657,9 +672,6 @@ Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	int victim = GetClientOfUserId(userid);
 	if(victim)
 	{
-		if(RobotSounds[victim])
-			RequestFrame(RemoveRagdollFrame, userid);
-		
 		if(RobotSounds[victim] == 2)
 		{
 			if(TF2_GetPlayerClass(victim) == TFClass_Heavy)
@@ -814,6 +826,9 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	// Explode the bomb on win
 	if(event && event.GetInt("winreason") == 1 && IsValidEntity(BombRef) && BombCarrier)
 	{
+		Attrib_Remove(BombCarrier, "move speed penalty");
+		Attrib_Remove(BombCarrier, "increase player capture value");
+
 		float pos[3];
 		GetEntPropVector(BombCarrier, Prop_Send, "m_vecOrigin", pos);
 		TE_Particle("mvm_hatch_destroy", pos);
@@ -1206,17 +1221,15 @@ Action Timer_BombThink(Handle timer)
 				{
 					GetEntPropVector(target, Prop_Send, "m_vecOrigin", pos2);
 					if(GetVectorDistance(pos1, pos2, true) < 90000.0)
-					{
 						TF2_AddCondition(target, TFCond_DefenseBuffNoCritBlock, 1.1);
-
-						if(BombLevel > 1)
-							TF2_AddCondition(target, TFCond_HalloweenQuickHeal, 1.1);
-
-						if(BombLevel > 2)
-							TF2_AddCondition(target, TFCond_HalloweenCritCandy, 1.1);
-					}
 				}
 			}
+
+			if(BombLevel > 1)
+				TF2_AddCondition(BombCarrier, TFCond_HalloweenQuickHeal, 1.1);
+
+			if(BombLevel > 2)
+				TF2_AddCondition(BombCarrier, TFCond_HalloweenCritCandy, 1.1);
 		}
 	}
 	return Plugin_Continue;
@@ -1258,8 +1271,7 @@ void StopRobotSound(int client)
 
 	if(PlayingRobotLoop[client] != -1)
 	{
-		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOPLOOPING);
-		EmitGameSoundToAll(LoopingSounds[PlayingRobotLoop[client]], client, SND_STOPLOOPING);
+		StopSound(client, SNDCHAN_STATIC, LoopingRawSounds[PlayingRobotLoop[client]]);
 		PlayingRobotLoop[client] = -1;
 	}
 }
@@ -1466,6 +1478,7 @@ Action SentryBusterExplode(Handle timer, int userid)
 
 			TE_Particle("fluidSmokeExpl_ring_mvm", pos);
 			ForcePlayerSuicide(client);
+			RequestFrame(RemoveRagdollFrame, userid);
 		}
 	}
 	return Plugin_Continue;

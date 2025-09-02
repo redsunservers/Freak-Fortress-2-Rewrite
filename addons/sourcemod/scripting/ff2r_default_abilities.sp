@@ -1006,10 +1006,10 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 							
 							TeleportEntity(client, _, _, velocity);
 							
+							SetEntityFlags(client, GetEntityFlags(client) & ~FL_ONGROUND);
 							SetEntProp(client, Prop_Send, "m_bJumping", true);
 
 							SDKCall_SetJumpBlastState(client, TF_PLAYER_ENEMY_BLASTED_ME);
-							TF2_AddCondition(client, TFCond_BlastJumping, _, client);
 							
 							if(ability.GetString("slot", buffer, sizeof(buffer)))
 								FF2R_EmitBossSoundToAll("sound_ability", client, buffer, client, _, SNDLEVEL_TRAFFIC);
@@ -1028,7 +1028,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 					}
 				}
 				
-				if(!(buttons & IN_SCORE) && (hud || ability.GetFloat("hudin") < gameTime))
+				if(!(buttons & IN_SCORE) && (hud || ability.GetFloat("hudin") < gameTime) && GameRules_GetRoundState() != RoundState_TeamWin)
 				{
 					ability.SetFloat("hudin", gameTime + 0.09);
 					
@@ -1901,14 +1901,6 @@ void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 	{
 		if(IsClientInGame(client))
 		{
-			BossData boss = FF2R_GetBossData(client);
-			if(boss)
-			{
-				AbilityData ability = boss.GetAbility("special_mobility");
-				if(ability.IsMyPlugin())
-					ability.SetFloat("hudin", FAR_FUTURE);
-			}
-			
 			CloneOwner[client] = 0;
 			CloneIdle[client] = false;
 			CloneLowPrio[client] = false;
