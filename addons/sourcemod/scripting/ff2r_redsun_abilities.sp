@@ -32,7 +32,9 @@ ConVar CvarFriendlyFire;
 
 #include "redsun_abilities/stocks.sp"
 #include "redsun_abilities/sdkcalls.sp"
+#include "redsun_abilities/sdkhooks.sp"
 
+#include "redsun_abilities/improved_saxton.sp"
 #include "redsun_abilities/vagineer.sp"
 
 public Plugin myinfo =
@@ -60,10 +62,12 @@ public void OnPluginStart()
 	CvarFriendlyFire = FindConVar("mp_friendlyfire");
 
 	HookEvent("player_builtobject", OnBuiltObject);
+	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	
 	// FF2 Files
 	Attrib_PluginStart();
 	CustomAttrib_PluginStart();
+	Saxton_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	VScript_PluginStart();
@@ -110,7 +114,7 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
-	
+	Saxton_MapStart();
 }
 
 public void OnMapEnd()
@@ -140,7 +144,7 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnClientPutInServer(int client)
 {
-	
+	SDKHooks_PutInServer(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -148,21 +152,34 @@ public void OnClientDisconnect(int client)
 	
 }
 
+public void OnGameFrame()
+{
+	Saxton_GameFrame();
+}
+
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
+{
+	return Saxton_PlayerRunCmd(client, buttons);
+}
+
 public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 {
+	Saxton_BossCreated(client, cfg, setup);
 }
 
 public void FF2R_OnBossEquipped(int client, bool weapons)
 {
+	Saxton_BossEquipped(client, weapons);
 }
 
 public void FF2R_OnBossRemoved(int client)
 {
-	
+	Saxton_BossRemoved(client);
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 {
+	Saxton_Ability(client, ability);
 	Vagineer_Ability(client, ability, cfg);
 }
 
@@ -176,7 +193,12 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
-void OnBuiltObject(Event event, const char[] name, bool dontBroadcast)
+public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
+{
+	return Saxton_Stomp(attacker, victim);
+}
+
+static void OnBuiltObject(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	int building = event.GetInt("index");
@@ -185,4 +207,10 @@ void OnBuiltObject(Event event, const char[] name, bool dontBroadcast)
 	{
 		Vagineer_BuiltObject(client, building);
 	}
+}
+
+static Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	Saxton_PlayerDeath(event);
+	return Plugin_Continue;
 }

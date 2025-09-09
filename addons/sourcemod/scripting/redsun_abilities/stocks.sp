@@ -1,6 +1,39 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#define IsEmptyString(%1)	(%1[0] == 0)
+#define FAR_FUTURE		100000000.0
+
+public const float OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
+
+enum // Collision_Group_t in const.h
+{
+	COLLISION_GROUP_NONE  = 0,
+	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
+	COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
+	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
+	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
+	COLLISION_GROUP_PLAYER,
+	COLLISION_GROUP_BREAKABLE_GLASS,
+	COLLISION_GROUP_VEHICLE,
+	COLLISION_GROUP_PLAYER_MOVEMENT,  // For HL2, same as Collision_Group_Player, for
+										// TF2, this filters out other players and CBaseObjects
+	COLLISION_GROUP_NPC,			// Generic NPC group
+	COLLISION_GROUP_IN_VEHICLE,		// for any entity inside a vehicle
+	COLLISION_GROUP_WEAPON,			// for any weapons that need collision detection
+	COLLISION_GROUP_VEHICLE_CLIP,	// vehicle clip brush to restrict vehicle movement
+	COLLISION_GROUP_PROJECTILE,		// Projectiles!
+	COLLISION_GROUP_DOOR_BLOCKER,	// Blocks entities not permitted to get near moving doors
+	COLLISION_GROUP_PASSABLE_DOOR,	// ** sarysa TF2 note: Must be scripted, not passable on physics prop (Doors that the player shouldn't collide with)
+	COLLISION_GROUP_DISSOLVING,		// Things that are dissolving are in this group
+	COLLISION_GROUP_PUSHAWAY,		// ** sarysa TF2 note: I could swear the collision detection is better for this than NONE. (Nonsolid on client and server, pushaway in player code)
+
+	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
+	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
+
+	LAST_SHARED_COLLISION_GROUP
+};
+
 void SetEntityModelScale(int entity, float scale)
 {
 	char buffer[16];
@@ -612,4 +645,20 @@ int GetKillsOfCosmeticRank(int rank = -1, int index = 0)
 			}
 		}
 	}
+}
+
+float GetBossCharge(ConfigData cfg, const char[] slot, float defaul = 0.0)
+{
+	int length = strlen(slot)+7;
+	char[] buffer = new char[length];
+	Format(buffer, length, "charge%s", slot);
+	return cfg.GetFloat(buffer, defaul);
+}
+
+void SetBossCharge(ConfigData cfg, const char[] slot, float amount)
+{
+	int length = strlen(slot)+7;
+	char[] buffer = new char[length];
+	Format(buffer, length, "charge%s", slot);
+	cfg.SetFloat(buffer, amount);
 }

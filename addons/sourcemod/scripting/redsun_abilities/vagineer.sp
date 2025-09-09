@@ -1,4 +1,7 @@
 /*
+	Vagineer from VSH Rewrite
+
+	
 	"rage_vagineer_sentry"
 	{
 		"slot"		"0"	// Ability slot
