@@ -2,6 +2,7 @@
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <dhooks>
+#include <tf_econ_dynamic>
 //#include <adt_trie_sort>
 #include <cfgmap>
 #undef REQUIRE_EXTENSIONS
@@ -15,6 +16,12 @@
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE	100000000.0
+
+#define TFTeam_Unassigned	0
+#define TFTeam_Spectator	1
+#define TFTeam_Red		2
+#define TFTeam_Blue		3
+#define TFTeam_MAX		4
 
 int PlayersAlive[4];
 bool SpecTeam;
@@ -30,10 +37,12 @@ ConVar CvarFriendlyFire;
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/vscript.sp"
 
+#include "redsun_abilities/customattrib.sp"
 #include "redsun_abilities/stocks.sp"
 #include "redsun_abilities/sdkcalls.sp"
 #include "redsun_abilities/sdkhooks.sp"
 
+#include "redsun_abilities/announcer.sp"
 #include "redsun_abilities/improved_saxton.sp"
 #include "redsun_abilities/vagineer.sp"
 
@@ -63,20 +72,27 @@ public void OnPluginStart()
 
 	HookEvent("player_builtobject", OnBuiltObject);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
+	HookEvent("player_spawn", OnPlayerSpawn);
 	
 	// FF2 Files
 	Attrib_PluginStart();
 	CustomAttrib_PluginStart();
-	Saxton_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	VScript_PluginStart();
 
 	// Redsun Files
 	SDKCalls_PluginStart();
+	SDKHook_PluginStart();
+	Saxton_PluginStart();
 
 	// Subplugin Last
 	Subplugin_PluginStart();
+}
+
+public void OnAllPluginsLoaded()
+{
+	CustomAttrib_AllPluginsLoaded();
 }
 
 void FF2R_PluginLoaded()
@@ -126,6 +142,7 @@ public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
 	CustomAttrib_LibraryAdded(name);
+	SDKHook_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
 	TFED_LibraryAdded(name);
@@ -136,6 +153,7 @@ public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
 	CustomAttrib_LibraryRemoved(name);
+	SDKHook_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
 	TFED_LibraryRemoved(name);
@@ -160,6 +178,11 @@ public void OnGameFrame()
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
 	return Saxton_PlayerRunCmd(client, buttons);
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	SDKHooks_EntityCreated(entity, classname);
 }
 
 public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
@@ -213,4 +236,14 @@ static Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	Saxton_PlayerDeath(event);
 	return Plugin_Continue;
+}
+
+static void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+
+	if(client)
+	{
+		Announcer_PlayerSpawn(client);
+	}
 }

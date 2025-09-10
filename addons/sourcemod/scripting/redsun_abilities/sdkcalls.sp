@@ -3,6 +3,7 @@
 
 static Handle SDKEquipWearable;
 static Handle SDKGetMaxHealth;
+static Handle SDKAddObject;
 static Handle SDKRemoveObject;
 
 void SDKCalls_PluginStart()
@@ -32,6 +33,13 @@ void SDKCalls_PluginStart()
 	gamedata = new GameData("ff2");
 
 	StartPrepSDKCall(SDKCall_Player);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::AddObject");
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+	SDKAddObject = EndPrepSDKCall();
+	if(!SDKAddObject)
+		LogError("[Gamedata] Could not find CTFPlayer::AddObject");
+
+	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CTFPlayer::RemoveObject");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	SDKRemoveObject = EndPrepSDKCall();
@@ -56,6 +64,12 @@ void SDKCall_EquipWearable(int client, int entity)
 int SDKCall_GetMaxHealth(int client)
 {
 	return SDKGetMaxHealth ? SDKCall(SDKGetMaxHealth, client) : GetEntProp(client, Prop_Data, "m_iMaxHealth");
+}
+
+void SDKCall_AddObject(int client, int entity)
+{
+	if(SDKAddObject)
+		SDKCall(SDKAddObject, client, entity);
 }
 
 void SDKCall_RemoveObject(int client, int entity)

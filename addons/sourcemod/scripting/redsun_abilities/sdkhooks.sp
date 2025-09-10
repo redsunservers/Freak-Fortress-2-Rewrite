@@ -1,13 +1,102 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#tryinclude <tf_ontakedamage>
+
+#define OTD_LIBRARY	"tf_ontakedamage"
+
+#if !defined __tf_ontakedamage_included
+enum CritType
+{
+	CritType_None = 0,
+	CritType_MiniCrit,
+	CritType_Crit
+};
+#endif
+
+static bool OTDLoaded;
+
+void SDKHook_PluginStart()
+{
+	OTDLoaded = LibraryExists(OTD_LIBRARY);
+}
+
+void SDKHook_LibraryAdded(const char[] name)
+{
+	if(!OTDLoaded && StrEqual(name, OTD_LIBRARY))
+	{
+		OTDLoaded = true;
+		
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKUnhook(client, SDKHook_OnTakeDamage, OnPlayerTakeDamage);
+		}
+	}
+}
+
+void SDKHook_LibraryRemoved(const char[] name)
+{
+	if(OTDLoaded && StrEqual(name, OTD_LIBRARY))
+	{
+		OTDLoaded = false;
+		
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKHook(client, SDKHook_OnTakeDamage, OnPlayerTakeDamage);
+		}
+	}
+}
+
 void SDKHooks_PutInServer(int client)
 {
+	if(!OTDLoaded)
+		SDKHook(client, SDKHook_OnTakeDamage, OnPlayerTakeDamage);
+	
+	SDKHook(client, SDKHook_OnTakeDamageAlivePost, OnPlayerTakeDamagePost);
 	SDKHook(client, SDKHook_PreThink, OnPreThink);
+}
+
+void SDKHooks_EntityCreated(int entity, const char[] classname)
+{
+	if(!StrContains(classname, "obj_"))
+	{
+		SDKHook(entity, SDKHook_OnTakeDamage, OnObjectTakeDamage);
+	}
 }
 
 static Action OnPreThink(int client)
 {
 	Saxton_PreThink(client);
 	return Plugin_Continue;
+}
+
+static Action OnPlayerTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	CritType crit = (damagetype & DMG_CRIT) ? CritType_Crit : CritType_None;
+	return TF2_OnTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, crit);
+}
+
+public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom, CritType &critType)
+{
+	Action action;
+
+	UpdateAction(action, CustomAttrib_PlayerTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, critType));
+	UpdateAction(action, Announcer_PlayerTakeDamage(victim, attacker, damage));
+
+	return action;
+}
+
+static void OnPlayerTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3], int damagecustom)
+{
+}
+
+static Action OnObjectTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	Action action;
+	
+	UpdateAction(action, CustomAttrib_ObjectTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom));
+	
+	return action;
 }

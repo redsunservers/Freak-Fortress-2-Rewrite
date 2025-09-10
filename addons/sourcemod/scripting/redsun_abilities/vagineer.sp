@@ -1,6 +1,5 @@
 /*
 	Vagineer from VSH Rewrite
-
 	
 	"rage_vagineer_sentry"
 	{

@@ -2,9 +2,30 @@
 #pragma newdecls required
 
 #define IsEmptyString(%1)	(%1[0] == 0)
-#define FAR_FUTURE		100000000.0
 
 public const float OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
+
+public const char BuildingName[][][] =
+{
+	{"Dispenser", ""},
+	{"Teleporter Entrance", "Teleporter Exit"},
+	{"Sentry Gun", ""},
+	{"Sapper", ""}
+};
+
+public const char ClassName[][] =
+{
+	"Unknown",
+	"Scout",
+	"Sniper",
+	"Soldier",
+	"Demoman",
+	"Medic",
+	"Heavy",
+	"Pyro",
+	"Spy",
+	"Engineer"
+};
 
 enum // Collision_Group_t in const.h
 {
@@ -41,6 +62,12 @@ void SetEntityModelScale(int entity, float scale)
 	
 	SetVariantString(buffer);
 	AcceptEntityInput(entity, "SetModelScale");
+}
+
+void UpdateAction(Action &current, Action changed)
+{
+	if(changed > current)
+		changed = current;
 }
 
 bool TF2_GetItem(int client, int &weapon, int &pos)
@@ -661,4 +688,95 @@ void SetBossCharge(ConfigData cfg, const char[] slot, float amount)
 	char[] buffer = new char[length];
 	Format(buffer, length, "charge%s", slot);
 	cfg.SetFloat(buffer, amount);
+}
+
+void TF2_SetBuildingOwner(int building, int client)
+{
+	SetEntPropEnt(building, Prop_Send, "m_hBuilder", client);
+	SDKCall_AddObject(client, building);
+}
+
+void TF2_SetBuildingTeam(int building, int team, int newBuilder = -1)
+{
+	int builder = GetEntPropEnt(building, Prop_Send, "m_hBuilder");
+	
+	//Remove the building from the original builder so it doesn't explode on team switch
+	SDKCall_RemoveObject(builder, building);
+	
+	//Set its team. If we were attempting to do this by changing its TeamNum ent prop, Sentries would act derpy by actively trying to shoot itself
+	SetVariantInt(team);
+	AcceptEntityInput(building, "SetTeam");
+	SetEntProp(building, Prop_Send, "m_nSkin", team-2);
+	
+	//Set a new builder and give them the building, if specified
+	if(newBuilder != -1)
+		TF2_SetBuildingOwner(building, newBuilder);
+	
+	switch(view_as<TFObjectType>(GetEntProp(building, Prop_Send, "m_iObjectType")))
+	{
+		case TFObject_Sentry:
+		{
+			//Mini-sentries use different skins, adjust accordingly
+			if (GetEntProp(building, Prop_Send, "m_bMiniBuilding"))
+				SetEntProp(building, Prop_Send, "m_nSkin", team);
+			
+			//Reset wrangler shield and player-controlled status to change team colors
+			//If the sentry is still being wrangled, the values will automatically adjust themselves next frame
+			if (GetEntProp(building, Prop_Send, "m_nShieldLevel") > 0)
+			{
+				SetEntProp(building, Prop_Send, "m_bPlayerControlled", false);
+				SetEntProp(building, Prop_Send, "m_nShieldLevel", 0);
+			}
+		}
+		case TFObject_Dispenser:
+		{
+			//Disable the dispenser's screen, it's better than having it not change team color
+			int screen = MaxClients+1;
+			while ((screen = FindEntityByClassname(screen, "vgui_screen")) > MaxClients)
+			{
+				if (GetEntPropEnt(screen, Prop_Send, "m_hOwnerEntity") == building)
+					AcceptEntityInput(screen, "Kill");
+			}
+		}
+		case TFObject_Teleporter:
+		{
+			//Disable teleporters for a little bit to reset the effects' colors
+			TF2_StunBuilding(building, 0.1);
+		}
+	}
+}
+
+void TF2_StunBuilding(int building, float duration)
+{
+	SetEntProp(building, Prop_Send, "m_bDisabled", true);
+	CreateTimer(duration, Timer_EnableBuilding, EntIndexToEntRef(building));
+}
+
+static Action Timer_EnableBuilding(Handle timer, int ref)
+{
+	int building = EntRefToEntIndex(ref);
+	if(building != -1)
+		SetEntProp(building, Prop_Send, "m_bDisabled", false);
+	
+	return Plugin_Continue;
+}
+
+void TF2_ShowAnnotation(int[] clients, int count, int target, const char[] message, float duration = 5.0, const char[] sound = "")
+{
+	//Create an annotation and show it to a specified array of clients
+	Event event = CreateEvent("show_annotation");
+	event.SetInt("id", target);				//Make its ID match the target, just so it's assigned to something unique
+	event.SetInt("follow_entindex", target);
+	event.SetFloat("lifetime", duration);
+	event.SetString("text", message);
+	event.SetString("play_sound", sound);		//If this is missing, it'll try to play a sound with an empty filepath
+	
+	for(int i = 0; i < count; i++)
+	{
+		//No point in showing the annotation to the target
+		if(clients[i] != target)
+			event.FireToClient(clients[i]);
+	}
+	
+	event.Cancel();
 }
