@@ -2,6 +2,7 @@
 #include <sdkhooks>
 #include <tf2_stocks>
 #include <dhooks>
+#include <tf_econ_data>
 #include <tf_econ_dynamic>
 //#include <adt_trie_sort>
 #include <cfgmap>
@@ -37,8 +38,10 @@ ConVar CvarFriendlyFire;
 #include "freak_fortress_2/tf2utils.sp"
 #include "freak_fortress_2/vscript.sp"
 
-#include "redsun_abilities/customattrib.sp"
 #include "redsun_abilities/stocks.sp"
+#include "redsun_abilities/customattrib.sp"
+#include "redsun_abilities/custommelee.sp"
+#include "redsun_abilities/dhooks.sp"
 #include "redsun_abilities/sdkcalls.sp"
 #include "redsun_abilities/sdkhooks.sp"
 
@@ -82,6 +85,7 @@ public void OnPluginStart()
 	VScript_PluginStart();
 
 	// Redsun Files
+	DHooks_PluginStart();
 	SDKCalls_PluginStart();
 	SDKHook_PluginStart();
 	Saxton_PluginStart();
@@ -115,6 +119,7 @@ void FF2R_PluginLoaded()
 
 public void OnPluginEnd()
 {
+	CustomMelee_PluginEnd();
 	OnMapEnd();
 	
 	for(int client = 1; client <= MaxClients; client++)
@@ -130,6 +135,7 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+	CustomMelee_MapStart();
 	Saxton_MapStart();
 }
 
@@ -183,6 +189,17 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 public void OnEntityCreated(int entity, const char[] classname)
 {
 	SDKHooks_EntityCreated(entity, classname);
+}
+
+public void OnEntityDestroyed(int entity)
+{
+	CustomMelee_EntityRemoved(entity);
+}
+
+public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname, bool &result)
+{
+	CustomMelee_CalcIsAttackCritical(weapon, weaponname);
+	return Plugin_Continue;
 }
 
 public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)

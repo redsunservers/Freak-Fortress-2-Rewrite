@@ -108,11 +108,11 @@ static Action AnnouncerSwapTimer(Handle timer, DataPack pack)
 			float convertAt = pack.ReadFloat();
 			float gameTime = GetGameTime();
 
-			if(convertAt < gameTime)
+			if(convertAt > gameTime)
 			{
 				int time = RoundToCeil(convertAt - gameTime);
 				PrintCenterText(client, "YOU'RE SWAPPING TEAMS IN %d SECOND%s", time, time > 1 ? "S" : "");
-				ConvertTimer[client] = CreateTimer(0.0, AnnouncerSwapTimer, pack);
+				ConvertTimer[client] = CreateTimer(1.0, AnnouncerSwapTimer, pack);
 				return Plugin_Continue;
 			}
 
@@ -156,7 +156,7 @@ static Action AnnouncerSwapTimer(Handle timer, DataPack pack)
 			}
 			
 			//Refill health
-			SetEntProp(client, Prop_Send, "m_iHealth", SDKCall_GetMaxHealth(client));
+			SetEntityHealth(client, SDKCall_GetMaxHealth(client));
 			
 			//Refill ammo (jank)
 			entity = CreateEntityByName("item_ammopack_full");
@@ -199,7 +199,7 @@ static void AnnouncerShowAnnotation(int boss, int target, const char[] message, 
 	{
 		if(client != target && IsClientInGame(client))
 		{
-			if(GetClientTeam(client) != team)
+			if(GetClientTeam(client) == team)
 				clients[count++] = client;
 		}
 	}

@@ -166,6 +166,13 @@
 				"linux64"	"@_ZN9CTFPlayer17SetBlastJumpStateEib"
 				"windows"	"\x55\x8B\xEC\x8B\x45\x08\x56\x8B\xF1\x09\x86\x8C\x21\x00\x00"
 			}
+			"CTFWeaponBaseMelee::DoSwingTraceInternal"
+			{
+				// "melee_range_multiplier"
+  			  	"library"	"server"
+				"linux"		"@_ZN18CTFWeaponBaseMelee20DoSwingTraceInternalER10CGameTracebP10CUtlVectorIS0_10CUtlMemoryIS0_iEE"
+				"windows"	"\x53\x8B\xDC\x83\xEC\x08\x83\xE4\xF0\x83\xC4\x04\x55\x8B\x6B\x04\x89\x6C\x24\x04\x8B\xEC\x81\xEC\x38\x05\x00\x00"
+			}
 		}
 		"Offsets"
 		{
@@ -480,6 +487,28 @@
 					"info"
 					{
 						"type"	"int"
+					}
+				}
+			}
+			"CTFWeaponBaseMelee::DoSwingTraceInternal"
+			{
+				"signature"	"CTFWeaponBaseMelee::DoSwingTraceInternal"
+				"callconv"	"thiscall"
+				"return"	"bool"
+				"this"		"entity"
+				"arguments"
+				{
+					"trace"
+					{
+						"type"	"objectptr"
+					}
+					"bCleave"
+					{
+						"type"	"bool"
+					}
+					"pTargetTraceVector"
+					{
+						"type"	"vectorptr"
 					}
 				}
 			}

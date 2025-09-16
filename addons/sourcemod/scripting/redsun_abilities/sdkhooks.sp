@@ -19,6 +19,17 @@ static bool OTDLoaded;
 void SDKHook_PluginStart()
 {
 	OTDLoaded = LibraryExists(OTD_LIBRARY);
+
+	if(!OTDLoaded)
+	{
+		for(int client = 1; client <= MaxClients; client++)
+		{
+			if(IsClientInGame(client))
+				SDKHook(client, SDKHook_OnTakeDamage, OnPlayerTakeDamage);
+		}
+	}
+
+	AddNormalSoundHook(HookSound);
 }
 
 void SDKHook_LibraryAdded(const char[] name)
@@ -99,4 +110,9 @@ static Action OnObjectTakeDamage(int victim, int &attacker, int &inflictor, floa
 	UpdateAction(action, CustomAttrib_ObjectTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom));
 	
 	return action;
+}
+
+static Action HookSound(int clients[MAXPLAYERS], int &numClients, char sample[256], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[256], int &seed)
+{
+	return CustomMelee_HookSound(clients, numClients, entity, channel);
 }

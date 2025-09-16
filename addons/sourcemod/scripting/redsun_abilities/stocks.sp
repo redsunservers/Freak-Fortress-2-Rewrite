@@ -67,7 +67,7 @@ void SetEntityModelScale(int entity, float scale)
 void UpdateAction(Action &current, Action changed)
 {
 	if(changed > current)
-		changed = current;
+		current = changed;
 }
 
 bool TF2_GetItem(int client, int &weapon, int &pos)
@@ -84,11 +84,13 @@ bool TF2_GetItem(int client, int &weapon, int &pos)
 		weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", pos);
 		pos++;
 		
-		if(GetEntProp(weapon, Prop_Send, "m_bDisguiseWeapon"))
-			continue;
-		
 		if(weapon != -1)
+		{
+			if(GetEntProp(weapon, Prop_Send, "m_bDisguiseWeapon"))
+				continue;
+			
 			return true;
+		}
 	}
 	return false;
 }

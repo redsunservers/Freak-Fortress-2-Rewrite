@@ -18,10 +18,13 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 {
 	Action action;
 
-	float value;
-	if(CustomAttrib_Get(weapon, "convert team on hit", value))
+	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
-		UpdateAction(action, Announcer_ConvertPlayer(value, victim, attacker, damage, damagetype, weapon, critType));
+		float value;
+		if(CustomAttrib_Get(weapon, "convert team on hit", value))
+		{
+			UpdateAction(action, Announcer_ConvertPlayer(value, victim, attacker, damage, damagetype, weapon, critType));
+		}
 	}
 
 	return action;
@@ -31,10 +34,13 @@ stock Action CustomAttrib_ObjectTakeDamage(int victim, int &attacker, int &infli
 {
 	Action action;
 	
-	float value;
-	if(CustomAttrib_Get(weapon, "convert team on hit", value))
+	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
-		UpdateAction(action, Announcer_ConvertBuilding(victim, attacker, damage, damagetype, weapon));
+		float value;
+		if(CustomAttrib_Get(weapon, "convert team on hit", value))
+		{
+			UpdateAction(action, Announcer_ConvertBuilding(victim, attacker, damage, damagetype, weapon));
+		}
 	}
 
 	return action;

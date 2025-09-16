@@ -1368,7 +1368,7 @@ static void SB_PreThink(int clientIdx)
 		{
 			SB_UsingUntil[clientIdx] = FAR_FUTURE;
 			if (TF2_GetPlayerClass(clientIdx) != SB_OriginalClass[clientIdx])
-				TF2_SetPlayerClass(clientIdx, SB_OriginalClass[clientIdx]);
+				TF2_SetPlayerClass(clientIdx, SB_OriginalClass[clientIdx], _, false);
 			SB_SwapWeapon(clientIdx, false);
 			if (TF2_IsPlayerInCondition(clientIdx, TFCond_MegaHeal))
 				TF2_RemoveCondition(clientIdx, TFCond_MegaHeal);
@@ -1435,7 +1435,7 @@ static void Rage_SaxtonBerserk(int clientIdx)
 	{
 		SB_OriginalClass[clientIdx] = TF2_GetPlayerClass(clientIdx);
 		if (SB_TempClass[clientIdx] > TFClass_Unknown && SB_TempClass[clientIdx] != SB_OriginalClass[clientIdx])
-			TF2_SetPlayerClass(clientIdx, SB_TempClass[clientIdx]);
+			TF2_SetPlayerClass(clientIdx, SB_TempClass[clientIdx], _, false);
 		SB_SwapWeapon(clientIdx, true);
 		FF2R_UpdateBossAttributes(clientIdx);
 	}
@@ -1456,7 +1456,7 @@ static void SH_PreThink(int clientIdx)
 
 	float curTime = GetEngineTime();
 	
-	if (curTime >= SH_NextHUDAt[clientIdx])
+	if (curTime >= SH_NextHUDAt[clientIdx] && GameRules_GetRoundState() != RoundState_TeamWin)
 	{
 		SH_NextHUDAt[clientIdx] = curTime + 0.1;
 		BossData boss = FF2R_GetBossData(clientIdx);
