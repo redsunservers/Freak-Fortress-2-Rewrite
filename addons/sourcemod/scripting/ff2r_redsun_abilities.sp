@@ -47,6 +47,7 @@ ConVar CvarFriendlyFire;
 
 #include "redsun_abilities/announcer.sp"
 #include "redsun_abilities/improved_saxton.sp"
+#include "redsun_abilities/spellbook.sp"
 #include "redsun_abilities/vagineer.sp"
 
 public Plugin myinfo =
@@ -220,6 +221,7 @@ public void FF2R_OnBossRemoved(int client)
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 {
 	Saxton_Ability(client, ability);
+	Spellbook_Ability(client, ability, cfg);
 	Vagineer_Ability(client, ability, cfg);
 }
 

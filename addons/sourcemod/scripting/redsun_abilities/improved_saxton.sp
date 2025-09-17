@@ -72,6 +72,7 @@
 
 	"rage_saxton_berserk"
 	{
+		"slot"		"0" // ability slot
 		"duration"	"8.0" // duration
 		"speed"		"490.0" // speed during rage. max is 520hups. set to 0.0 to not use feature.
 		"attachment"	"hand_R;hand_L" // fist attachment names, semicolon separated (max two) [these two are not standard, you must put them in your model's QC]
