@@ -45,10 +45,10 @@ ConVar CvarFriendlyFire;
 #include "redsun_abilities/sdkcalls.sp"
 #include "redsun_abilities/sdkhooks.sp"
 
-#include "redsun_abilities/announcer.sp"
-#include "redsun_abilities/improved_saxton.sp"
-#include "redsun_abilities/spellbook.sp"
-#include "redsun_abilities/vagineer.sp"
+#include "redsun_abilities/bosses/announcer.sp"
+#include "redsun_abilities/bosses/improved_saxton.sp"
+#include "redsun_abilities/bosses/spellbook.sp"
+#include "redsun_abilities/bosses/vagineer.sp"
 
 public Plugin myinfo =
 {
@@ -77,6 +77,7 @@ public void OnPluginStart()
 	HookEvent("player_builtobject", OnBuiltObject);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("player_spawn", OnPlayerSpawn);
+	HookEvent("deploy_buff_banner", OnDeployBanner);
 	
 	// FF2 Files
 	Attrib_PluginStart();
@@ -264,5 +265,15 @@ static void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	if(client)
 	{
 		Announcer_PlayerSpawn(client);
+	}
+}
+
+static void OnDeployBanner(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("buff_owner"));
+
+	if(client)
+	{
+		CustomAttrib_DeployBanner(client);
 	}
 }
