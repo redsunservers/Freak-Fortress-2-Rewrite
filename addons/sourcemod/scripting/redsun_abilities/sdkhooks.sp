@@ -67,6 +67,7 @@ void SDKHooks_PutInServer(int client)
 	
 	SDKHook(client, SDKHook_OnTakeDamageAlivePost, OnPlayerTakeDamagePost);
 	SDKHook(client, SDKHook_PreThink, OnPreThink);
+	SDKHook(client, SDKHook_StartTouch, OnStartTouch);
 }
 
 void SDKHooks_EntityCreated(int entity, const char[] classname)
@@ -80,6 +81,12 @@ void SDKHooks_EntityCreated(int entity, const char[] classname)
 static Action OnPreThink(int client)
 {
 	Saxton_PreThink(client);
+	return Plugin_Continue;
+}
+
+static Action OnStartTouch(int client, int target)
+{
+	Goomba_StartTouch(client, target);
 	return Plugin_Continue;
 }
 

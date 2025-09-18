@@ -26,10 +26,11 @@
 
 int PlayersAlive[4];
 bool SpecTeam;
+char KillIcon[64];
+char KillName[64];
 
 ConVar CvarFriendlyFire;
 
-#include "freak_fortress_2/customattrib.sp"
 #include "freak_fortress_2/econdata.sp"
 #include "freak_fortress_2/formula_parser.sp"
 #include "freak_fortress_2/subplugin.sp"
@@ -44,6 +45,8 @@ ConVar CvarFriendlyFire;
 #include "redsun_abilities/dhooks.sp"
 #include "redsun_abilities/sdkcalls.sp"
 #include "redsun_abilities/sdkhooks.sp"
+
+#include "redsun_abilities/weapons/goomba.sp"
 
 #include "redsun_abilities/bosses/announcer.sp"
 #include "redsun_abilities/bosses/improved_saxton.sp"
@@ -63,7 +66,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	// FF2 Files
 	Attrib_PluginLoad();
-	CustomAttrib_PluginLoad();
 	TF2Items_PluginLoad();
 	TF2U_PluginLoad();
 	TFED_PluginLoad();
@@ -81,7 +83,6 @@ public void OnPluginStart()
 	
 	// FF2 Files
 	Attrib_PluginStart();
-	CustomAttrib_PluginStart();
 	TF2U_PluginStart();
 	TFED_PluginStart();
 	VScript_PluginStart();
@@ -138,6 +139,7 @@ public void OnPluginEnd()
 public void OnMapStart()
 {
 	CustomMelee_MapStart();
+	Goomba_MapStart();
 	Saxton_MapStart();
 }
 
@@ -149,7 +151,6 @@ public void OnMapEnd()
 public void OnLibraryAdded(const char[] name)
 {
 	Attrib_LibraryAdded(name);
-	CustomAttrib_LibraryAdded(name);
 	SDKHook_LibraryAdded(name);
 	Subplugin_LibraryAdded(name);
 	TF2U_LibraryAdded(name);
@@ -160,7 +161,6 @@ public void OnLibraryAdded(const char[] name)
 public void OnLibraryRemoved(const char[] name)
 {
 	Attrib_LibraryRemoved(name);
-	CustomAttrib_LibraryRemoved(name);
 	SDKHook_LibraryRemoved(name);
 	Subplugin_LibraryRemoved(name);
 	TF2U_LibraryRemoved(name);
@@ -236,11 +236,6 @@ public void FF2R_OnAliveChanged(const int alive[4], const int total[4])
 	SpecTeam = (total[TFTeam_Unassigned] || total[TFTeam_Spectator]);
 }
 
-public Action OnStomp(int attacker, int victim, float &damageMultiplier, float &damageBonus, float &JumpPower)
-{
-	return Saxton_Stomp(attacker, victim);
-}
-
 static void OnBuiltObject(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
@@ -252,9 +247,25 @@ static void OnBuiltObject(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
+void SetKillIcon(const char[] icon = "", const char[] name = "")
+{
+	strcopy(KillIcon, sizeof(KillIcon), icon);
+	strcopy(KillName, sizeof(KillName), name);
+}
+
 static Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	Saxton_PlayerDeath(event);
+
+	if(KillIcon[0])
+	{
+		event.SetString("weapon", KillIcon);
+		if(KillName[0])
+			event.SetString("weapon_logclassname", KillName);
+		
+		return Plugin_Changed;
+	}
+
 	return Plugin_Continue;
 }
 

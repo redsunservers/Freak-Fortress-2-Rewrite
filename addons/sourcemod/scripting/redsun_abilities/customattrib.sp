@@ -39,7 +39,7 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		float value;
-		if(CustomAttrib_Get(weapon, "convert team on hit", value))
+		if(Attrib_Get(weapon, "convert team on hit", value))
 		{
 			UpdateAction(action, Announcer_ConvertPlayer(value, victim, attacker, damage, damagetype, weapon, critType));
 		}
@@ -55,7 +55,7 @@ stock Action CustomAttrib_ObjectTakeDamage(int victim, int &attacker, int &infli
 	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
 		float value;
-		if(CustomAttrib_Get(weapon, "convert team on hit", value))
+		if(Attrib_Get(weapon, "convert team on hit", value))
 		{
 			UpdateAction(action, Announcer_ConvertBuilding(victim, attacker, damage, damagetype, weapon));
 		}
@@ -71,36 +71,36 @@ stock void CustomAttrib_DeployBanner(int client)
 	if(weapon != -1)
 	{
 		float value;
-		if(CustomAttrib_Get(weapon, "banner rocket barrage", value))
+		if(Attrib_Get(weapon, "banner rocket barrage", value))
 		{
 			int primary = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
 			if(primary != -1)
 			{
-				Attrib_Set(primary, "fire rate bonus HIDDEN", 0.1, 5.0);
+				ApplyTempAttribute(primary, "fire rate bonus HIDDEN", 0.1, 5.0);
 
 				char classname[36];
 				GetEntityClassname(primary, classname, sizeof(classname));
 				if(!StrContains(classname, "tf_weapon_particle_cannon"))
 				{
-					Attrib_Set(primary, "Reload time increased", 0.1, 5.0);
+					ApplyTempAttribute(primary, "Reload time increased", 0.1, 5.0);
 				}
 				else
 				{
-					Attrib_Set(primary, "crits_become_minicrits", 1.0, 5.0);
-					SetEntProp(primary, Prop_Data, "m_iClip1", GetEntProp(primary, Prop_Data, "m_iClip1") + value);
+					ApplyTempAttribute(primary, "crits_become_minicrits", 1.0, 5.0);
+					SetEntProp(primary, Prop_Data, "m_iClip1", GetEntProp(primary, Prop_Data, "m_iClip1") + RoundFloat(value));
 				}
 			}
 		}
 
-		if(CustomAttrib_Get(weapon, "banner zombie summon", value))
+		if(Attrib_Get(weapon, "banner zombie summon", value))
 		{
 			SummonZombies(client, RoundFloat(value));
 		}
 
-		if(CustomAttrib_Get(weapon, "banner speed ammo", value))
+		if(Attrib_Get(weapon, "banner speed ammo", value))
 		{
-			Attrib_Set(weapon, "move speed bonus", value, 9.5);
-			Attrib_Set(weapon, "ammo regen", 100.0, 10.1);
+			ApplyTempAttribute(weapon, "move speed bonus", value, 9.5);
+			ApplyTempAttribute(weapon, "ammo regen", 100.0, 10.1);
 			TF2_AddCondition(client, TFCond_Dazed, 0.001);
 		}
 	}
@@ -127,7 +127,8 @@ static void SummonZombies(int client, int amount)
 			
 			if(GetClientTeam(target) != team || TF2_GetPlayerClass(target) == TFClass_Engineer)
 				continue;
-
+			
+			victim[victims] = target;
 			victims++;
 		}
 
@@ -141,8 +142,8 @@ static void SummonZombies(int client, int amount)
 			ChangeClientTeam(target, team);
 			FF2R_SetClientMinion(target, 2);
 
-			int desired = GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass");
-			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", TFClass_Scout);
+			int desired = GetEntProp(target, Prop_Send, "m_iDesiredPlayerClass");
+			TF2_SetPlayerClass(target, TFClass_Scout);
 			
 			TF2_RespawnPlayer(target);
 			SetEntProp(target, Prop_Send, "m_bDucked", true);
@@ -152,15 +153,23 @@ static void SummonZombies(int client, int amount)
 			
 			TF2_AddCondition(target, TFCond_HalloweenKartNoTurn, 2.0);
 			TF2_AddCondition(target, TFCond_UberchargedCanteen, 2.0);
-			TF2_AddCondition(target, TFCond_CritCanteen);
+			TF2_AddCondition(target, TFCond_CritOnDamage, _, client);
 			ClientCommand(target, "playgamesound ui/system_message_alert.wav");
 
 			SetEntProp(target, Prop_Send, "m_iDesiredPlayerClass", desired);
 
 			TF2_RemoveAllWeapons(target);
 
-			bool equip = true;
-			int entity = TF2Items_CreateFromCfg(target, "tf_weapon_bat", null, equip);
+			static WeaponData weapon;
+			if(!weapon.Index)
+			{
+				// Weapon
+				weapon.Setup("tf_weapon_bat", 190, "", true);
+				weapon.Quality = 0;
+				weapon.Level = 1;
+			}
+
+			int entity = TF2Items_CreateFromStruct(target, weapon);
 			if(entity != -1)
 			{
 				SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", target);

@@ -39,14 +39,31 @@ void Spellbook_Ability(int client, const char[] ability, AbilityData cfg)
 		SetEntProp(spellbook, Prop_Send, "m_iSelectedSpellIndex", cfg.GetInt("type"));
 		SetEntProp(spellbook, Prop_Send, "m_iSpellCharges", cfg.GetInt("charges", 1));
 
-		KeyValues kv = new KeyValues("+use_action_slot_item_server");
-		FakeClientCommandKeyValues(client, kv);
-		delete kv;
-		
-		kv = new KeyValues("-use_action_slot_item_server");
-		FakeClientCommandKeyValues(client, kv);
-		delete kv;
+		CreateTimer(0.0, RetrySpellTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
+}
+
+static Action RetrySpellTimer(Handle timer, int userid)
+{
+	int client = GetClientOfUserId(userid);
+	if(client)
+	{
+		int spellbook = GetSpellbook(client);
+		if(spellbook != -1 && GetEntProp(spellbook, Prop_Send, "m_iSpellCharges") > 0)
+		{
+			KeyValues kv = new KeyValues("+use_action_slot_item_server");
+			FakeClientCommandKeyValues(client, kv);
+			delete kv;
+			
+			kv = new KeyValues("-use_action_slot_item_server");
+			FakeClientCommandKeyValues(client, kv);
+			delete kv;
+
+			CreateTimer(2.5, RetrySpellTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 static int GetSpellbook(int client)

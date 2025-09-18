@@ -782,3 +782,182 @@ void TF2_ShowAnnotation(int[] clients, int count, int target, const char[] messa
 	
 	event.Cancel();
 }
+
+float fabs(float value)
+{
+	return value < 0.0 ? -value : value;
+}
+
+int AttachParticle(int entity, const char[] name, float lifetime)
+{
+	int particle = CreateEntityByName("info_particle_system");
+	if(particle != -1)
+	{
+		float position[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
+		position[2] += 75.0;
+		TeleportEntity(particle, position);
+		
+		DispatchKeyValue(particle, "effect_name", name);
+		DispatchSpawn(particle);
+		
+		SetVariantString("!activator");
+		AcceptEntityInput(particle, "SetParent", entity);
+		SetEntPropEnt(particle, Prop_Send, "m_hOwnerEntity", entity);
+		
+		ActivateEntity(particle);
+		AcceptEntityInput(particle, "start");
+		
+		char buffer[64];
+		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%.1f:1", lifetime);
+		SetVariantString(buffer);
+		AcceptEntityInput(particle, "AddOutput");
+		AcceptEntityInput(particle, "FireUser1");
+	}
+	return particle;
+}
+
+stock void TE_Particle(const char[] Name, float origin[3]=NULL_VECTOR, float start[3]=NULL_VECTOR, float angles[3]=NULL_VECTOR, int entindex=-1, int attachtype=-1, int attachpoint=-1, bool resetParticles=true, int customcolors=0, float color1[3]=NULL_VECTOR, float color2[3]=NULL_VECTOR, int controlpoint=-1, int controlpointattachment=-1, float controlpointoffset[3]=NULL_VECTOR, float delay=0.0)
+{
+	// find string table
+	int tblidx = FindStringTable("ParticleEffectNames");
+	if(tblidx == INVALID_STRING_TABLE)
+	{
+		LogError("Could not find string table: ParticleEffectNames");
+		return;
+	}
+
+	// find particle index
+	static char tmp[256];
+	int count = GetStringTableNumStrings(tblidx);
+	int stridx = INVALID_STRING_INDEX;
+	for(int i; i<count; i++)
+	{
+		ReadStringTable(tblidx, i, tmp, sizeof(tmp));
+		if(StrEqual(tmp, Name, false))
+		{
+			stridx = i;
+			break;
+		}
+	}
+
+	if(stridx == INVALID_STRING_INDEX)
+	{
+		LogError("Could not find particle: %s", Name);
+		return;
+	}
+	
+	TE_Start("TFParticleEffect");
+	TE_WriteFloat("m_vecOrigin[0]", origin[0]);
+	TE_WriteFloat("m_vecOrigin[1]", origin[1]);
+	TE_WriteFloat("m_vecOrigin[2]", origin[2]);
+	TE_WriteFloat("m_vecStart[0]", start[0]);
+	TE_WriteFloat("m_vecStart[1]", start[1]);
+	TE_WriteFloat("m_vecStart[2]", start[2]);
+	TE_WriteVector("m_vecAngles", angles);
+	TE_WriteNum("m_iParticleSystemIndex", stridx);
+
+	if(entindex != -1)
+		TE_WriteNum("entindex", entindex);
+
+	if(attachtype != -1)
+		TE_WriteNum("m_iAttachType", attachtype);
+
+	if(attachpoint != -1)
+		TE_WriteNum("m_iAttachmentPointIndex", attachpoint);
+
+	TE_WriteNum("m_bResetParticles", resetParticles ? 1:0);
+	if(customcolors)
+	{
+		TE_WriteNum("m_bCustomColors", customcolors);
+		TE_WriteVector("m_CustomColors.m_vecColor1", color1);
+		if(customcolors == 2)
+			TE_WriteVector("m_CustomColors.m_vecColor2", color2);
+	}
+
+	if(controlpoint != -1)
+	{
+		TE_WriteNum("m_bControlPoint1", controlpoint);
+		if(controlpointattachment != -1)
+		{
+			TE_WriteNum("m_ControlPoint1.m_eParticleAttachment", controlpointattachment);
+			TE_WriteFloat("m_ControlPoint1.m_vecOffset[0]", controlpointoffset[0]);
+			TE_WriteFloat("m_ControlPoint1.m_vecOffset[1]", controlpointoffset[1]);
+			TE_WriteFloat("m_ControlPoint1.m_vecOffset[2]", controlpointoffset[2]);
+		}
+	}
+
+	TE_SendToAll(delay);
+}
+
+/**
+ * method
+ * 0 = Set, then remove
+ * 1 = Multiply, then divide
+ * 2 = Add, then subtract
+ */
+void ApplyTempAttribute(int entity, const char[] name, float value, float duration, int method = 0)
+{
+	switch(method)
+	{
+		case 0:
+		{
+			Attrib_Set(entity, name, value);
+		}
+		case 1:
+		{
+			float previous = 1.0;
+			Attrib_Get(entity, name, previous);
+			Attrib_Set(entity, name, previous * value);
+		}
+		case 2:
+		{
+			float previous = 0.0;
+			Attrib_Get(entity, name, previous);
+			Attrib_Set(entity, name, previous + value);
+		}
+	}
+
+	DataPack pack;
+	CreateDataTimer(duration, RemoveAttribTimer, pack, TIMER_FLAG_NO_MAPCHANGE);
+	pack.WriteCell(EntIndexToEntRef(entity));
+	pack.WriteString(name);
+	pack.WriteFloat(value);
+	pack.WriteCell(method);
+}
+
+static Action RemoveAttribTimer(Handle timer, DataPack pack)
+{
+	pack.Reset();
+	int entity = EntRefToEntIndex(pack.ReadCell());
+	if(entity != -1)
+	{
+		char name[64];
+		pack.ReadString(name, sizeof(name));
+		
+		float value = pack.ReadFloat();
+		int method = pack.ReadCell();
+
+		switch(method)
+		{
+			case 0:
+			{
+				Attrib_Remove(entity, name);
+			}
+			case 1:
+			{
+				float previous = 1.0;
+				Attrib_Get(entity, name, previous);
+				Attrib_Set(entity, name, previous / value);
+			}
+			case 2:
+			{
+				float previous = 0.0;
+				Attrib_Get(entity, name, previous);
+				Attrib_Set(entity, name, previous - value);
+			}
+		}
+	}
+
+	return Plugin_Continue;
+}
