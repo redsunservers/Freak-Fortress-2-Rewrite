@@ -50,6 +50,7 @@ ConVar CvarFriendlyFire;
 
 #include "redsun_abilities/bosses/announcer.sp"
 #include "redsun_abilities/bosses/improved_saxton.sp"
+#include "redsun_abilities/bosses/rock.sp"
 #include "redsun_abilities/bosses/spellbook.sp"
 #include "redsun_abilities/bosses/vagineer.sp"
 
@@ -221,6 +222,7 @@ public void FF2R_OnBossRemoved(int client)
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 {
+	Rock_Ability(client, ability, cfg);
 	Saxton_Ability(client, ability);
 	Spellbook_Ability(client, ability, cfg);
 	Vagineer_Ability(client, ability, cfg);

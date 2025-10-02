@@ -270,7 +270,6 @@ stock void Attrib_Set(int entity, const char[] name, float value, float duration
 	
 	static char buffer[256];
 	Format(buffer, sizeof(buffer), "self.Add%sAttribute(\"%s\", %f, %f)", (!custom || entity > MaxClients) ? "" : "Custom", name, value, duration);
-	PrintToChatAll(buffer);
 	SetVariantString(buffer);
 	AcceptEntityInput(entity, "RunScriptCode");
 }

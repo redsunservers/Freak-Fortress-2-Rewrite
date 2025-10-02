@@ -43,6 +43,12 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 		{
 			UpdateAction(action, Announcer_ConvertPlayer(value, victim, attacker, damage, damagetype, weapon, critType));
 		}
+
+		if(Attrib_Get(weapon, "add damagetype", value))
+		{
+			damagetype |= RoundFloat(value);
+			UpdateAction(action, Plugin_Changed);
+		}
 	}
 
 	return action;
@@ -58,6 +64,12 @@ stock Action CustomAttrib_ObjectTakeDamage(int victim, int &attacker, int &infli
 		if(Attrib_Get(weapon, "convert team on hit", value))
 		{
 			UpdateAction(action, Announcer_ConvertBuilding(victim, attacker, damage, damagetype, weapon));
+		}
+
+		if(Attrib_Get(weapon, "add damagetype", value))
+		{
+			damagetype |= RoundFloat(value);
+			UpdateAction(action, Plugin_Changed);
 		}
 	}
 
