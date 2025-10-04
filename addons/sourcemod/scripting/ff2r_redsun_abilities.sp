@@ -51,6 +51,7 @@ ConVar CvarFriendlyFire;
 #include "redsun_abilities/bosses/announcer.sp"
 #include "redsun_abilities/bosses/improved_saxton.sp"
 #include "redsun_abilities/bosses/rock.sp"
+#include "redsun_abilities/bosses/sarysapub1.sp"
 #include "redsun_abilities/bosses/spellbook.sp"
 #include "redsun_abilities/bosses/vagineer.sp"
 
@@ -92,6 +93,7 @@ public void OnPluginStart()
 	DHooks_PluginStart();
 	SDKCalls_PluginStart();
 	SDKHook_PluginStart();
+	Sarysapub1_PluginStart();
 	Saxton_PluginStart();
 
 	// Subplugin Last
@@ -181,16 +183,19 @@ public void OnClientDisconnect(int client)
 
 public void OnGameFrame()
 {
+	Sarysapub1_GameFrame();
 	Saxton_GameFrame();
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
+	Sarysapub1_PlayerRunCmd(client, buttons);
 	return Saxton_PlayerRunCmd(client, buttons);
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
+	Sarysapub1_EntityCreated(entity, classname);
 	SDKHooks_EntityCreated(entity, classname);
 }
 
@@ -207,6 +212,7 @@ public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname
 
 public void FF2R_OnBossCreated(int client, BossData cfg, bool setup)
 {
+	Sarysapub1_BossCreated(client, cfg, setup);
 	Saxton_BossCreated(client, cfg, setup);
 }
 
@@ -217,12 +223,14 @@ public void FF2R_OnBossEquipped(int client, bool weapons)
 
 public void FF2R_OnBossRemoved(int client)
 {
+	Sarysapub1_BossRemoved(client);
 	Saxton_BossRemoved(client);
 }
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 {
 	Rock_Ability(client, ability, cfg);
+	Sarysapub1_Ability(client, ability, cfg);
 	Saxton_Ability(client, ability);
 	Spellbook_Ability(client, ability, cfg);
 	Vagineer_Ability(client, ability, cfg);

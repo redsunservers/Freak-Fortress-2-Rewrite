@@ -788,7 +788,7 @@ float fabs(float value)
 	return value < 0.0 ? -value : value;
 }
 
-int AttachParticle(int entity, const char[] name, float lifetime)
+int AttachParticle(int entity, const char[] name, float lifetime = 0.0)
 {
 	int particle = CreateEntityByName("info_particle_system");
 	if(particle != -1)
@@ -808,11 +808,14 @@ int AttachParticle(int entity, const char[] name, float lifetime)
 		ActivateEntity(particle);
 		AcceptEntityInput(particle, "start");
 		
-		char buffer[64];
-		FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%.1f:1", lifetime);
-		SetVariantString(buffer);
-		AcceptEntityInput(particle, "AddOutput");
-		AcceptEntityInput(particle, "FireUser1");
+		if(lifetime > 0.0)
+		{
+			char buffer[64];
+			FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%.1f:1", lifetime);
+			SetVariantString(buffer);
+			AcceptEntityInput(particle, "AddOutput");
+			AcceptEntityInput(particle, "FireUser1");
+		}
 	}
 	return particle;
 }
