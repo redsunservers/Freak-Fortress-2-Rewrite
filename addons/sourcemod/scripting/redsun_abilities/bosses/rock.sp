@@ -1,5 +1,5 @@
 /*
-	Rock from Deathreus
+	The Rock
 	
 	"rage_rock_condition"
 	{
@@ -65,7 +65,7 @@ static Action RockExplodeTimer(Handle timer, DataPack pack)
 {
 	pack.Reset();
 	int client = GetClientOfUserId(pack.ReadCell());
-	if(client)
+	if(client && FF2R_GetBossData(client))
 	{
 		if(GetGameTime() < pack.ReadFloat())
 		{

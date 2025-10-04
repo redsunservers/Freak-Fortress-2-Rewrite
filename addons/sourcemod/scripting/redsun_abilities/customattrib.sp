@@ -29,6 +29,18 @@ void CustomAttrib_AllPluginsLoaded()
 	attrib.SetCustom("description_ff2_string", "x%s movement speed and ammo regen on use");
 	attrib.Register();
 
+	attrib.SetName("add damagetype");
+	attrib.SetClass("redsun.adddmgtype");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "");
+	attrib.Register();
+
+	attrib.SetName("remove damagetype");
+	attrib.SetClass("redsun.adddmgtype");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "");
+	attrib.Register();
+
 	delete attrib;
 }
 
@@ -47,6 +59,13 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 		if(Attrib_Get(weapon, "add damagetype", value))
 		{
 			damagetype |= RoundFloat(value);
+			UpdateAction(action, Plugin_Changed);
+		}
+
+		if(Attrib_Get(weapon, "remove damagetype", value))
+		{
+			damagetype &= ~RoundFloat(value);
+			PrintToChatAll("%d", damagetype);
 			UpdateAction(action, Plugin_Changed);
 		}
 	}
@@ -69,6 +88,12 @@ stock Action CustomAttrib_ObjectTakeDamage(int victim, int &attacker, int &infli
 		if(Attrib_Get(weapon, "add damagetype", value))
 		{
 			damagetype |= RoundFloat(value);
+			UpdateAction(action, Plugin_Changed);
+		}
+
+		if(Attrib_Get(weapon, "remove damagetype", value))
+		{
+			damagetype &= ~RoundFloat(value);
 			UpdateAction(action, Plugin_Changed);
 		}
 	}
