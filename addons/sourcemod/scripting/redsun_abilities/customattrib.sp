@@ -65,7 +65,6 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 		if(Attrib_Get(weapon, "remove damagetype", value))
 		{
 			damagetype &= ~RoundFloat(value);
-			PrintToChatAll("%d", damagetype);
 			UpdateAction(action, Plugin_Changed);
 		}
 	}

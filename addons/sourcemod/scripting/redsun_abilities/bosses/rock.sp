@@ -22,6 +22,17 @@
 		
 		"plugin_name"	"ff2r_redsun_abilities"
 	}
+	
+	"special_rock_killfeed"
+	{
+		"env_explosion"	// Kill icon to replace
+		{
+			"icon"	"vehicle"		// Icon
+			"log"	"rock_exploding"	// Log Message
+		}
+		
+		"plugin_name"	"ff2r_redsun_abilities"
+	}
 */
 
 #pragma semicolon 1
@@ -59,6 +70,38 @@ void Rock_Ability(int client, const char[] ability, AbilityData cfg)
 		pack.WriteFloat(cfg.GetFloat("damage", 9999.0) / 10.0);
 		pack.WriteFloat(cfg.GetFloat("radius", 100.0));
 	}
+}
+
+Action Rock_PlayerDeath(Event event)
+{
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	if(attacker)
+	{
+		BossData boss = FF2R_GetBossData(attacker);
+		if(boss)
+		{
+			AbilityData cfg = boss.GetAbility("special_rock_killfeed");
+			if(cfg)
+			{
+				char buffer[64];
+				event.GetString("weapon_logclassname", buffer, sizeof(buffer));
+				
+				ConfigData info = cfg.GetSection(buffer);
+				if(info)
+				{
+					if(info.GetString("icon", buffer, sizeof(buffer)))
+						event.SetString("weapon", buffer);
+					
+					if(info.GetString("log", buffer, sizeof(buffer)))
+						event.SetString("weapon_logclassname", buffer);
+					
+					return Plugin_Changed;
+				}
+			}
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 static Action RockExplodeTimer(Handle timer, DataPack pack)

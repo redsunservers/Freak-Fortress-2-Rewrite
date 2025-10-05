@@ -257,8 +257,12 @@ void Sarysapub1_BossCreated(int clientIdx, BossData boss, bool setup)
 			ReplaceString(RW_Messages[i], RW_MAX_MESSAGE_LENGTH, "\\n", "\n");
 			
 			// overrides for lock on and homing angle
-			RWI_LockOnAngle[i] = info.GetFloat("anglelockon", maxAngleLockOn);
-			RWI_HomeAngle[i] = info.GetFloat("anglehome", maxAngleHome);
+			RWI_LockOnAngle[i] = info.GetFloat("anglelockon");
+			if(RWI_LockOnAngle[i] <= 0.0)
+				RWI_LockOnAngle[i] = maxAngleLockOn;
+			RWI_HomeAngle[i] = info.GetFloat("anglehome");
+			if(RWI_HomeAngle[i] <= 0.0)
+				RWI_HomeAngle[i] = maxAngleHome;
 		}
 		RW_Messages[RW_INVALID_INDEX] = "Weapon chances didn't add up to 100%.\nNotify your server admin.";
 		RW_Messages[RW_MISSING_MELEE] = "Melee rage missing. Can't give armor.\nNotify your server admin.";
@@ -415,6 +419,14 @@ void Sarysapub1_Ability(int clientIdx, const char[] ability_name, AbilityData cf
 	// ROTT props not activated this way
 }
 
+void Sarysapub1_PluginEnd()
+{
+	for (int propIdx = PROP_HighestSpawnedProp; propIdx >= 0; propIdx--)
+	{
+		DestroyProp(propIdx, false);
+	}
+}
+
 /**
  * Shared
  */
@@ -505,7 +517,7 @@ static void Rage_ROTTWeapons(int clientIdx, AbilityData cfg)
 	}
 
 	// read in the weapon to give to the player
-	int clipSize = info.GetInt("clip");
+	//int clipSize = info.GetInt("clip");
 	char weaponName[64];
 	info.GetString("classname", weaponName, sizeof(weaponName));
 	
@@ -513,11 +525,13 @@ static void Rage_ROTTWeapons(int clientIdx, AbilityData cfg)
 	// we can no longer assume no weapon name is safe
 	if (strlen(weaponName) > 3)
 	{
+		int slot = TF2_GetClassnameSlot(weaponName);
+
 		// sarysa updated 2014-09-23
 		// if the hale already has a weapon, check the clip.
 		// if it's lower than the clip of the int weapon, 
-		bool shouldAddWeapon = true;
-		if (RWI_Type[weaponSpec] != RW_TYPE_ARMOR)
+		/*bool shouldAddWeapon = true;
+		if (RWI_Type[weaponSpec] != RW_TYPE_ARMOR && slot >= TFWeaponSlot_Primary && slot < TFWeaponSlot_Item1)
 		{
 			int oldWeapon = GetPlayerWeaponSlot(clientIdx, TFWeaponSlot_Primary);
 			if (IsValidEntity(oldWeapon))
@@ -532,8 +546,11 @@ static void Rage_ROTTWeapons(int clientIdx, AbilityData cfg)
 			}
 		}
 	
-		if (shouldAddWeapon)
+		if (shouldAddWeapon)*/
 		{
+			if (slot >= TFWeaponSlot_Primary && slot < TFWeaponSlot_Item1)
+				TF2_RemoveWeaponSlot(clientIdx, slot);
+			
 			bool equip = true;
 			TF2Items_CreateFromCfg(clientIdx, weaponName, info, equip);
 
@@ -868,27 +885,18 @@ static Action OnPropDamaged(int prop, int& attacker, int& inflictor,
 	{
 		// allow bosses to 2-shot the props with melee
 		damage = float(GetEntProp(prop, Prop_Data, "m_iMaxHealth") / 2);
-		return Plugin_Changed;
 	}
-	
-	return Plugin_Continue;
-}
- 
-static void OnPropDamagedPost(int prop, int attacker, int inflictor, 
-							float damage, int damagetype, int weapon, 
-							const float damageForce[3], const float damagePosition[3], int damagecustom)
-{
-	if (!IsLivingPlayer(attacker))
-		return;
-	
+
 	Event event = CreateEvent("npc_hurt", true);
 	event.SetInt("entindex", prop);
 	event.SetInt("attacker_player", GetClientUserId(attacker));
 	event.SetInt("weaponid", weapon);
 	event.SetInt("damageamount", RoundFloat(damage));
-	event.SetInt("health", GetEntProp(prop, Prop_Data, "m_iHealth"));
+	event.SetInt("health", GetEntProp(prop, Prop_Data, "m_iHealth") - RoundFloat(damage));
 	event.FireToClient(attacker);
 	event.Cancel();
+	
+	return Plugin_Changed;
 }
 
 static void RP_SetErrorState(int clientIdx, int errorState)
@@ -964,7 +972,7 @@ static bool SpawnProp(int clientIdx)
 	// if it's any solid prop, make sure it's not spawned in a location that could trap another player
 	if (propType != PROP_SLICER)
 	{
-		for (int victim = 1; victim < MAXPLAYERS+1; victim++)
+		for (int victim = 1; victim <= MaxClients; victim++)
 		{
 			if (clientIdx == victim || !IsLivingPlayer(victim))
 				continue;
@@ -1066,7 +1074,6 @@ static bool SpawnProp(int clientIdx)
 		
 	// damage hook it (need to let boss easily destroy it with melee, but not other weapons)
 	SDKHook(prop, SDKHook_OnTakeDamage, OnPropDamaged);
-	SDKHook(prop, SDKHook_OnTakeDamagePost, OnPropDamagedPost);
 	
 	// find an open prop, or destroy an old one
 	int propIdx = PROP_HighestSpawnedProp + 1;
@@ -1089,7 +1096,7 @@ static bool SpawnProp(int clientIdx)
 	PROP_Type[propIdx] = propType;
 	PROP_OwnerUserId[propIdx] = GetClientUserId(clientIdx);
 	float triggerTime = GetEngineTime() + (propType == PROP_SLICER ? RPS_DelayBeforeDamage : 0.0) - RP_EffectTriggerInterval[propType];
-	for (int i = 1; i < MAXPLAYERS+1; i++)
+	for (int i = 1; i <= MaxClients; i++)
 		PROP_NextTriggerTime[propIdx][i] = triggerTime;
 		
 	// trigger certain effects on the prop creator now, ignoring the collision check
@@ -1118,7 +1125,7 @@ static void DestroyProp(int propIdx, bool reorder)
 			PROP_EntRef[i] = PROP_EntRef[i+1];
 			PROP_Type[i] = PROP_Type[i+1];
 			PROP_OwnerUserId[i] = PROP_OwnerUserId[i+1];
-			for (int j = 0; j < MAXPLAYERS+1; j++)
+			for (int j = 0; j <= MaxClients; j++)
 				PROP_NextTriggerTime[i][j] = PROP_NextTriggerTime[i+1][j];
 		}
 		PROP_HighestSpawnedProp--;
@@ -1192,7 +1199,10 @@ static void RP_TriggerSlicer(int clientIdx, int propIdx)
 		int owner = GetClientOfUserId(PROP_OwnerUserId[propIdx]);
 		if (!IsLivingPlayer(owner))
 			owner = clientIdx;
+		
+		SetKillIcon("helicopter", "rott_slicer");
 		SDKHooks_TakeDamage(clientIdx, owner, owner, RPS_DamagePerCheck, DMG_GENERIC | (RPS_NegatePushForce ? DMG_PREVENT_PHYSICS_FORCE : 0), -1);
+		SetKillIcon();
 	}
 
 	// set trigger time
@@ -1632,9 +1642,13 @@ void Sarysapub1_GameFrame()
 		{
 			if (ROTT_HudRefreshAt[clientIdx] <= GetEngineTime())
 			{
-				// going with the FF2 timer values, since I'd like it to be fairly responsive
-				SetHudTextParams(-1.0, 0.6, 0.15, 255, 255, 255, 255);
-				ShowSyncHudText(clientIdx, ROTT_SyncHud, ROTT_HudMessage[clientIdx]);
+				if(GameRules_GetRoundState() != RoundState_TeamWin)
+				{
+					// going with the FF2 timer values, since I'd like it to be fairly responsive
+					SetHudTextParams(-1.0, 0.6, 0.15, 255, 255, 255, 255);
+					ShowSyncHudText(clientIdx, ROTT_SyncHud, ROTT_HudMessage[clientIdx]);
+				}
+
 				ROTT_HudRefreshAt[clientIdx] = GetEngineTime() + 0.1;
 			}
 		}

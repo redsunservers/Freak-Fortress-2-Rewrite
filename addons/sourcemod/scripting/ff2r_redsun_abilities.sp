@@ -126,6 +126,7 @@ void FF2R_PluginLoaded()
 public void OnPluginEnd()
 {
 	CustomMelee_PluginEnd();
+	Sarysapub1_PluginEnd();
 	OnMapEnd();
 	
 	for(int client = 1; client <= MaxClients; client++)
@@ -265,6 +266,9 @@ void SetKillIcon(const char[] icon = "", const char[] name = "")
 
 static Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
+	Action action;
+	
+	UpdateAction(action, Rock_PlayerDeath(event));
 	Saxton_PlayerDeath(event);
 
 	if(KillIcon[0])
@@ -273,10 +277,10 @@ static Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		if(KillName[0])
 			event.SetString("weapon_logclassname", KillName);
 		
-		return Plugin_Changed;
+		UpdateAction(action, Plugin_Changed);
 	}
 
-	return Plugin_Continue;
+	return action;
 }
 
 static void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
