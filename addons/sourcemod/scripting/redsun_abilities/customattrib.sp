@@ -41,6 +41,12 @@ void CustomAttrib_AllPluginsLoaded()
 	attrib.SetCustom("description_ff2_string", "");
 	attrib.Register();
 
+	attrib.SetName("ignite on hit");
+	attrib.SetClass("redsun.ignitehit");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "On Hit: Ignites target for %s seconds");
+	attrib.Register();
+
 	delete attrib;
 }
 
@@ -67,6 +73,9 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 			damagetype &= ~RoundFloat(value);
 			UpdateAction(action, Plugin_Changed);
 		}
+
+		if(Attrib_Get(weapon, "ignite on hit", value))
+			TF2_IgnitePlayer(victim, attacker, value);
 	}
 
 	return action;
