@@ -107,6 +107,7 @@ void Gamemode_MapStart()
 {
 	RoundStatus = -1;
 	Waiting = GameRules_GetRoundState() < RoundState_StartGame;
+	PrecacheScriptSound("Announcer.AM_CapEnabledRandom");
 }
 
 void Gamemode_MapEnd()
@@ -295,6 +296,17 @@ public void TF2_OnWaitingForPlayersStart()
 
 		delete BackupTimer;
 		BackupTimer = CreateTimer(Cvar[WaitingTime].FloatValue + 5.0, Gamemode_BackupWaiting);
+
+		if (GameRules_GetProp("m_nGameType") == 4)
+		{
+			int iArenaLogic = FindEntityByClassname(MaxClients + 1, "tf_logic_arena");
+
+			if (iArenaLogic != -1)
+			{
+				FireEntityOutput(iArenaLogic, "OnArenaRoundStart", iArenaLogic);
+				FireEvent(CreateEvent("arena_round_start"));
+			}
+		}
 	}
 }
 
@@ -634,7 +646,7 @@ void Gamemode_RoundEnd(int winteam)
 			totalMax[teams[i]] += maxhealth;
 			
 			// Show chat message version
-			if(alive)
+			if(alive && !Client(clients[i]).MinionType)
 			{
 				int health = Client(clients[i]).Health;
 				if(health > 0)

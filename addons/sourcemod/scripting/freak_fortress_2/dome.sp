@@ -116,6 +116,10 @@ static void Dome_MasterSpawn(int master)
 
 static void Dome_TriggerSpawn(int trigger)
 {
+	//Set time to cap to whatever in convar
+	if(Cvar[CaptureDomeTime].FloatValue > 0.0)
+		DispatchKeyValueFloat(trigger, "area_time_to_cap", Cvar[CaptureDomeTime].FloatValue / 2.0);
+	
 	//If mp_capstyle is set to 1, team_numcap_ keyvalues are used in the captime calculations
 	DispatchKeyValue(trigger, "team_numcap_2", "1");
 	DispatchKeyValue(trigger, "team_numcap_3", "1");
@@ -402,7 +406,7 @@ static Action Dome_TimerBleed(Handle timer)
 				//Calculate damage, the longer the player is outside of the dome, the more damage it deals
 				float fdamage = Pow(2.0, DomePlayerTime[client]);
 				
-				if(fdamage < 65.0)
+				if((Client(client).IsBoss || Client(client).MinionType) && fdamage < 65.0)
 					fdamage = 65.0;
 				
 				//Deal damage

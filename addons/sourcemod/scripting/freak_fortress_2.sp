@@ -189,6 +189,7 @@ enum
 	CaptureTime,
 	CaptureAlive,
 	CaptureDome,
+	CaptureDomeTime,
 	HealthBar,
 	RefreshDmg,
 	RefreshTime,
@@ -337,6 +338,7 @@ public void OnPluginStart()
 public void OnAllPluginsLoaded()
 {
 	Configs_AllPluginsLoaded();
+	CustomAttrib_AllPluginsLoaded();
 
 	if(!Attrib_Loaded() && !VScript_Loaded())
 		LogError("[!!!] No attribute manager is loaded, make sure either TF2Attributes or VScript is loaded on the server and compiled into FF2");
