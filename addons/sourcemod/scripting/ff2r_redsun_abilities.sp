@@ -17,6 +17,7 @@
 
 #define MAXTF2PLAYERS	MAXPLAYERS+1
 #define FAR_FUTURE	100000000.0
+#define MAXENTITIES	2048
 
 #define TFTeam_Unassigned	0
 #define TFTeam_Spectator	1
@@ -49,6 +50,7 @@ ConVar CvarFriendlyFire;
 #include "redsun_abilities/weapons/goomba.sp"
 
 #include "redsun_abilities/bosses/announcer.sp"
+#include "redsun_abilities/bosses/hhh.sp"
 #include "redsun_abilities/bosses/improved_saxton.sp"
 #include "redsun_abilities/bosses/rock.sp"
 #include "redsun_abilities/bosses/sarysapub1.sp"
@@ -190,6 +192,7 @@ public void OnGameFrame()
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
+	CustomAttrib_PlayerRunCmd(client);
 	Sarysapub1_PlayerRunCmd(client, buttons);
 	return Saxton_PlayerRunCmd(client, buttons);
 }

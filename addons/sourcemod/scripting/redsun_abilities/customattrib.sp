@@ -1,6 +1,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+static int WallClimbCombo[MAXPLAYERS+1];
+
 void CustomAttrib_AllPluginsLoaded()
 {
 	TF2EconDynAttribute attrib = new TF2EconDynAttribute();
@@ -45,6 +47,30 @@ void CustomAttrib_AllPluginsLoaded()
 	attrib.SetClass("redsun.ignitehit");
 	attrib.SetDescriptionFormat("additive");
 	attrib.SetCustom("description_ff2_string", "On Hit: Ignites target for %s seconds");
+	attrib.Register();
+
+	attrib.SetName("wall climb");
+	attrib.SetClass("redsun.wallclimbhealth");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "Able to climb walls but consumes %s health");
+	attrib.Register();
+
+	attrib.SetName("wall climb limit");
+	attrib.SetClass("redsun.wallclimblimit");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "Can climb %s times before touching the ground");
+	attrib.Register();
+
+	attrib.SetName("wall climb height");
+	attrib.SetClass("redsun.wallclimbheight");
+	attrib.SetDescriptionFormat("precentage");
+	attrib.SetCustom("description_ff2_string", "x%s climb height multiplier");
+	attrib.Register();
+
+	attrib.SetName("wall climb speed");
+	attrib.SetClass("redsun.wallclimbspeed");
+	attrib.SetDescriptionFormat("precentage");
+	attrib.SetCustom("description_ff2_string", "x%s climb horizontal velocity multiplier");
 	attrib.Register();
 
 	delete attrib;
@@ -107,6 +133,82 @@ stock Action CustomAttrib_ObjectTakeDamage(int victim, int &attacker, int &infli
 	}
 
 	return action;
+}
+
+stock void CustomAttrib_PlayerRunCmd(int client)
+{
+	if(WallClimbCombo[client])
+	{
+		if(GetEntityFlags(client) & FL_ONGROUND)
+			WallClimbCombo[client] = 0;
+	}
+}
+
+stock void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
+{
+	float value;
+	if(Attrib_Get(weapon, "wall climb", value))
+	{
+		int health = RoundFloat(value);
+		bool buffed = TF2_IsPlayerInCondition(client, TFCond_CritCola);
+
+		if(!buffed && GetClientHealth(client) <= health)
+			return;
+
+		if(!buffed && Attrib_Get(weapon, "wall climb limit", value))
+		{
+			if(RoundFloat(value) >= WallClimbCombo[client])
+				return;
+		}
+
+		float pos[3], vec[3];
+		GetClientEyePosition(client, pos);
+		GetClientEyeAngles(client, vec);
+
+		//Check for colliding entities
+		Handle trace = TR_TraceRayFilterEx(pos, vec, MASK_PLAYERSOLID, RayType_Infinite, Trace_DontHitEntity, client);
+		if(TR_DidHit(trace))
+		{
+			int entity = TR_GetEntityIndex(trace);
+			
+			char classname[64];
+			GetEdictClassname(entity, classname, sizeof(classname));
+			if(strcmp(classname, "worldspawn") != 0 && strncmp(classname, "prop_", 5) != 0)
+				return;
+			
+			TR_GetPlaneNormal(trace, vec);
+			GetVectorAngles(vec, vec);
+
+			if((vec[0] < 30.0 || vec[0] > 330.0) && vec[0] > -30.0)
+			{
+				TR_GetEndPosition(vec);
+				float dist = GetVectorDistance(pos, vec, true);
+				if(dist < 10000.0)
+				{
+					float height = 1.0;
+					Attrib_Get(weapon, "wall climb height", value);
+
+					float speed = 1.0;
+					Attrib_Get(weapon, "wall climb speed", value);
+
+					GetEntPropVector(client, Prop_Data, "m_vecVelocity", vec);
+					vec[0] *= speed;
+					vec[1] *= speed;
+					vec[2] = 750.0 * height;
+					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vec);
+					
+					WallClimbCombo[client]++;
+
+					if(!buffed)
+						SDKHooks_TakeDamage(client, 0, client, float(health), DMG_PREVENT_PHYSICS_FORCE);
+					
+					SetEntityFlags(client, GetEntityFlags(client) & ~FL_ONGROUND);
+				}
+			}
+		}
+
+		delete trace;
+	}
 }
 
 stock void CustomAttrib_DeployBanner(int client)

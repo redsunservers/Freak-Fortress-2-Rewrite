@@ -788,34 +788,62 @@ float fabs(float value)
 	return value < 0.0 ? -value : value;
 }
 
-int AttachParticle(int entity, const char[] name, float lifetime = 0.0)
+int CreateParticleEffect(const char[] effectName = "", const float position[3] = NULL_VECTOR, int attachment = -1, float duration = 0.0, bool voided = true, int controlPoint = -1)
 {
 	int particle = CreateEntityByName("info_particle_system");
 	if(particle != -1)
 	{
-		float position[3];
-		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", position);
-		position[2] += 75.0;
-		TeleportEntity(particle, position);
-		
-		DispatchKeyValue(particle, "effect_name", name);
-		DispatchSpawn(particle);
-		
-		SetVariantString("!activator");
-		AcceptEntityInput(particle, "SetParent", entity);
-		SetEntPropEnt(particle, Prop_Send, "m_hOwnerEntity", entity);
-		
-		ActivateEntity(particle);
-		AcceptEntityInput(particle, "start");
-		
-		if(lifetime > 0.0)
+		if(!IsNullVector(position))
 		{
-			char buffer[64];
-			FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%.1f:1", lifetime);
-			SetVariantString(buffer);
-			AcceptEntityInput(particle, "AddOutput");
-			AcceptEntityInput(particle, "FireUser1");
+			TeleportEntity(particle, position, NULL_VECTOR, NULL_VECTOR);
 		}
+		else if(attachment != -1)
+		{
+			float pos[3];
+			GetEntPropVector(attachment, Prop_Send, "m_vecOrigin", pos);
+			TeleportEntity(particle, pos, NULL_VECTOR, NULL_VECTOR);
+		}
+		
+		SetEntPropFloat(particle, Prop_Data, "m_flSimulationTime", GetGameTime());
+		DispatchKeyValue(particle, "targetname", "rpg_fortress");
+
+		DispatchKeyValue(particle, "effect_name", effectName[0] ? effectName : "3rd_trail");
+		DispatchSpawn(particle);
+
+		if(attachment != -1)
+		{
+			SetVariantString("!activator");
+			AcceptEntityInput(particle, "SetParent", attachment, particle);
+		}
+
+		if(controlPoint != -1)
+		{
+			SetEntPropEnt(particle, Prop_Send, "m_hControlPointEnts", controlPoint);
+			SetEntProp(particle, Prop_Send, "m_iControlPointParents", controlPoint);
+		}
+
+		if(effectName[0])
+		{
+			ActivateEntity(particle);
+			AcceptEntityInput(particle, "start");
+		}
+
+		SetEdictFlags(particle, (GetEdictFlags(particle) & ~FL_EDICT_ALWAYS));	
+		
+		if(duration > 0.0)
+		{
+			if(voided)
+			{
+				CreateTimer(duration, Timer_RemoveEntity, EntIndexToEntRef(particle), TIMER_FLAG_NO_MAPCHANGE);
+			}
+			else
+			{
+				char buffer[64];
+				FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%f:1", duration);
+				SetVariantString(buffer);
+				AcceptEntityInput(particle, "AddOutput");
+			}
+		}	
 	}
 	return particle;
 }
@@ -963,4 +991,54 @@ static Action RemoveAttribTimer(Handle timer, DataPack pack)
 	}
 
 	return Plugin_Continue;
+}
+
+Action Timer_RemoveEntity(Handle timer, any entid)
+{
+	int entity = EntRefToEntIndex(entid);
+	if(entity != -1)
+	{
+		TeleportEntity(entity, { 16383.0, 16383.0, -16383.0 }); // send it away first in case it feels like dying dramatically
+		RemoveEntity(entity);
+	}
+	return Plugin_Continue;
+}
+
+bool IsPointsClear(const float pos1[3], const float pos2[3])
+{
+	TR_TraceRayFilter(pos1, pos2, MASK_PLAYERSOLID, RayType_EndPoint, TraceRay_DontHitPlayersAndObjects);
+	return !TR_DidHit();
+}
+
+void ScreenFade(int client, int duration, int time, int flags, int r, int g, int b, int a)
+{
+	BfWrite bf = view_as<BfWrite>(StartMessageOne("Fade", client));
+	bf.WriteShort(duration * 500);
+	bf.WriteShort(time);
+	bf.WriteShort(flags);
+	bf.WriteByte(r);
+	bf.WriteByte(g);
+	bf.WriteByte(b);
+	bf.WriteByte(a);
+	EndMessage();
+}
+
+bool Trace_WallsOnly(int entity, int contentsMask)
+{
+	return false;
+}
+
+bool Trace_DontHitEntity(int entity, int contentsMask, any data)
+{
+	return entity != data;
+}
+
+bool TraceRay_DontHitPlayersAndObjects(int entity, int contentsMask, int data)
+{
+	if(entity > 0 && entity <= MaxClients)
+		return false;
+	
+	static char classname[8];
+	GetEntityClassname(entity, classname, sizeof(classname));
+	return StrContains(classname, "obj_") != 0;
 }

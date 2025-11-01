@@ -809,7 +809,7 @@ static bool SL_HasLineOfSight(float bossPos[3], float victimPos[3], float zOffse
 	static float tmpPos[3];
 	bossPos[2] += zOffset;
 	victimPos[2] += zOffset;
-	TR_TraceRayFilter(bossPos, victimPos, MASK_PLAYERSOLID, RayType_EndPoint, TraceWallsOnly);
+	TR_TraceRayFilter(bossPos, victimPos, MASK_PLAYERSOLID, RayType_EndPoint, Trace_WallsOnly);
 	TR_GetEndPosition(tmpPos);
 	bossPos[2] -= zOffset;
 	victimPos[2] -= zOffset;
@@ -861,7 +861,7 @@ static void SL_PreThink(int clientIdx)
 		static float bossPos[3];
 		GetEntPropVector(clientIdx, Prop_Send, "m_vecOrigin", bossPos);
 		static float hitPos[3];
-		TR_TraceRayFilter(bossPos, angles, MASK_PLAYERSOLID, RayType_Infinite, TraceWallsOnly);
+		TR_TraceRayFilter(bossPos, angles, MASK_PLAYERSOLID, RayType_Infinite, Trace_WallsOnly);
 		TR_GetEndPosition(hitPos);
 		float distance = GetVectorDistance(bossPos, hitPos);
 
@@ -1670,15 +1670,6 @@ static int AttachParticleToAttachment(int entity, const char[] particleType, con
 	return particle;
 }
 
-static Action Timer_RemoveEntity(Handle timer, any entid)
-{
-	int entity = EntRefToEntIndex(entid);
-	if (IsValidEntity(entity))
-		RemoveEntity(entity);
-	
-	return Plugin_Continue;
-}
-
 static bool IsLivingPlayer(int clientIdx)
 {
 	if (clientIdx <= 0 || clientIdx > MaxClients)
@@ -1736,11 +1727,6 @@ static void ReadConditions(ConfigData cfg, const char[] arg_name, TFCond conditi
 		else
 			conditions[i] = view_as<TFCond>(StringToInt(conditionStrs[i]));
 	}
-}
-
-static bool TraceWallsOnly(int entity, int contentsMask)
-{
-	return false;
 }
 
 // really wish that the original GetVectorAngles() worked this way.
@@ -1886,7 +1872,7 @@ static bool CheckGroundClearance(int clientIdx, float minClearance, bool failInW
 	static float origin[3];
 	GetEntPropVector(clientIdx, Prop_Send, "m_vecOrigin", origin);
 	
-	Handle trace = TR_TraceRayFilterEx(origin, view_as<float>({90.0,0.0,0.0}), (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, TraceWallsOnly);
+	Handle trace = TR_TraceRayFilterEx(origin, view_as<float>({90.0,0.0,0.0}), (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, Trace_WallsOnly);
 	static float endPos[3];
 	TR_GetEndPosition(endPos, trace);
 	CloseHandle(trace);

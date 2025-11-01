@@ -649,13 +649,13 @@ static void MonitorRocket(int clientIdx, int rocket, float velocity)
 	// trail override
 	if (!IsEmptyString(RWI_ParticleOverride[spec]))
 	{
-		AttachParticle(rocket, RWI_ParticleOverride[spec], 10.0);
+		CreateParticleEffect(RWI_ParticleOverride[spec], _, rocket, 10.0);
 	}
 	
 	// mandatory sunbeams effect for god mode. gotta make it more god-like looking as in ROTT :P
 	if (RWI_Type[spec] == RW_TYPE_GOD_MODE)
 	{
-		AttachParticle(rocket, "superrare_beams1", 10.0);
+		CreateParticleEffect("superrare_beams1", _, rocket, 10.0);
 	}
 	
 	// do we really, truly need to monitor this rocket?
@@ -1376,7 +1376,7 @@ void Sarysapub1_GameFrame()
 						for (int i = 0; i < 4; i++)
 						{
 							firebombAngles[1] = fixAngle(RMR_LastAngle[rocketIdx][1] + (float(i) * 90.0));
-							Handle trace = TR_TraceRayFilterEx(RMR_LastPosition[rocketIdx], firebombAngles, (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, TraceWallsOnly);
+							Handle trace = TR_TraceRayFilterEx(RMR_LastPosition[rocketIdx], firebombAngles, (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, Trace_WallsOnly);
 							TR_GetEndPosition(tmpVec, trace);
 							CloseHandle(trace);
 							float distance = GetVectorDistance(RMR_LastPosition[rocketIdx], tmpVec);
@@ -1458,7 +1458,7 @@ void Sarysapub1_GameFrame()
 							
 							// first do a ray trace. if that fails, target lost.
 							GetRayAngles(rocketOrigin, targetOrigin, tmpAngles);
-							Handle trace = TR_TraceRayFilterEx(rocketOrigin, tmpAngles, (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, TraceWallsOnly);
+							Handle trace = TR_TraceRayFilterEx(rocketOrigin, tmpAngles, (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, Trace_WallsOnly);
 							TR_GetEndPosition(tmpOrigin, trace);
 							CloseHandle(trace);
 							if (GetVectorDistance(rocketOrigin, targetOrigin, true) > GetVectorDistance(rocketOrigin, tmpOrigin, true))
@@ -1498,7 +1498,7 @@ void Sarysapub1_GameFrame()
 							if (testDist < nearestValidDistance)
 							{
 								GetRayAngles(rocketOrigin, targetOrigin, tmpAngles);
-								Handle trace = TR_TraceRayFilterEx(rocketOrigin, tmpAngles, (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, TraceWallsOnly);
+								Handle trace = TR_TraceRayFilterEx(rocketOrigin, tmpAngles, (CONTENTS_SOLID | CONTENTS_WINDOW | CONTENTS_GRATE), RayType_Infinite, Trace_WallsOnly);
 								TR_GetEndPosition(tmpOrigin, trace);
 								CloseHandle(trace);
 								
@@ -1751,11 +1751,6 @@ static void ReadCenterText(ConfigData cfg, const char[] arg_name, char centerTex
 {
 	cfg.GetString(arg_name, centerText, 170);
 	ReplaceString(centerText, 170, "\\n", "\n");
-}
-
-static bool TraceWallsOnly(int entity, int contentsMask)
-{
-	return false;
 }
 
 static float fixAngle(float angle)

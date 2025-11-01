@@ -53,8 +53,9 @@ void Goomba_StartTouch(int client, int target)
 					SDKHooks_TakeDamage(target, client, client, 500.0, DMG_PREVENT_PHYSICS_FORCE, .bypassHooks = false);
 					SetKillIcon();
 
-					AttachParticle(target, "mini_fireworks", 5.0);
-					EmitSoundToAll(GOOMBA_SOUND, target, _, _, _, 0.7);
+					pos1[2] += 45.0;
+					CreateParticleEffect("mini_fireworks", pos1, _, 5.0);
+					EmitSoundToAll(GOOMBA_SOUND, target, _, _, _, 0.6);
 
 					// If any change, recoil
 					if(!heavy && (!IsPlayerAlive(target) || health != GetClientHealth(target)))
