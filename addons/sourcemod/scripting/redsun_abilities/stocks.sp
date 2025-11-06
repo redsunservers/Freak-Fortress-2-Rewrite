@@ -1023,6 +1023,17 @@ void ScreenFade(int client, int duration, int time, int flags, int r, int g, int
 	EndMessage();
 }
 
+void ApplyAllyHealEvent(int healer, int patient, int amount)
+{
+	Event event = CreateEvent("player_healed", true);
+
+	event.SetInt("healer", healer);
+	event.SetInt("patient", patient);
+	event.SetInt("amount", amount);
+
+	event.Fire();
+}
+
 bool Trace_WallsOnly(int entity, int contentsMask)
 {
 	return false;

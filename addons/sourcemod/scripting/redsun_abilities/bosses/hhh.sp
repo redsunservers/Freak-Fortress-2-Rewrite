@@ -217,6 +217,13 @@ static void HHH_GhostFrame(DataPack pack)
 						}
 					}
 				}
+
+				if(totalHealing > 0.0)
+				{
+					int healing = RoundFloat(totalHealing);
+					ApplyAllyHealEvent(client, client, healing);
+					SetEntityHealth(client, GetClientHealth(client) + healing);
+				}
 				
 				//Random Spook effects, 2.5 sec cooldown
 				if((frames % pack.ReadCell()) == 0)

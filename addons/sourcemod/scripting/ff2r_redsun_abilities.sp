@@ -233,6 +233,7 @@ public void FF2R_OnBossRemoved(int client)
 
 public void FF2R_OnAbility(int client, const char[] ability, AbilityData cfg)
 {
+	HHH_Ability(client, ability, cfg);
 	Rock_Ability(client, ability, cfg);
 	Sarysapub1_Ability(client, ability, cfg);
 	Saxton_Ability(client, ability);
