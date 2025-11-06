@@ -55,17 +55,17 @@ void HHH_Ability(int client, const char[] ability, AbilityData cfg)
 		
 		//Stun and Fly
 		float duration = cfg.GetFloat("duration", 8.0);
-		TF2_StunPlayer(client, duration, 0.0, TF_STUNFLAG_GHOSTEFFECT|TF_STUNFLAG_NOSOUNDOREFFECT, 0);
+		//TF2_StunPlayer(client, duration, 0.0, TF_STUNFLAG_GHOSTEFFECT|TF_STUNFLAG_NOSOUNDOREFFECT, 0);
 		TF2_AddCondition(client, TFCond_SwimmingNoEffects, duration);
 		TF2_AddCondition(client, TFCond_ImmuneToPushback, duration);
 		SetEntPropFloat(client, Prop_Send, "m_flNextAttack", GetGameTime() + duration);
 		
 		//Get active weapon and dont render
-		int iWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-		if(IsValidEdict(iWeapon))
+		int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		if(IsValidEntity(weapon))
 		{
-			SetEntityRenderMode(iWeapon, RENDER_TRANSCOLOR);
-			SetEntityRenderColor(iWeapon, _, _, _, 0);
+			SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
+			SetEntityRenderColor(weapon, _, _, _, 0);
 		}
 		
 		//Thirdperson
@@ -118,6 +118,9 @@ static void HHH_GhostFrame(DataPack pack)
 				//Player interaction
 				for(int victim = 1; victim <= MaxClients; victim++)
 				{
+					if(victim == client)
+						continue;
+					
 					bool spook = false;
 					
 					if(IsClientInGame(victim) && IsPlayerAlive(victim) && GetClientTeam(victim) != GetClientTeam(client))
@@ -251,7 +254,7 @@ static void HHH_GhostFrame(DataPack pack)
 							
 							float pos1[3], pos2[3];
 							GetClientAbsOrigin(teleport1, pos1);
-							GetClientAbsOrigin(teleport2, pos1);
+							GetClientAbsOrigin(teleport2, pos2);
 
 							SetEntProp(teleport1, Prop_Send, "m_bDucked", true);
 							SetEntityFlags(teleport1, GetEntityFlags(teleport1) | FL_DUCKING);
@@ -284,6 +287,14 @@ static void HHH_GhostFrame(DataPack pack)
 			float origin[3];
 			GetClientAbsOrigin(client, origin);
 			CreateParticleEffect(PARTICLE_GHOST, origin, _, 3.0);
+		
+			//Get active weapon and make it visible again
+			int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+			if(IsValidEntity(weapon))
+			{
+				SetEntityRenderMode(weapon, RENDER_NORMAL);
+				SetEntityRenderColor(weapon, _, _, _, 255);
+			}
 			
 			//Firstperson
 			SetVariantInt(false);

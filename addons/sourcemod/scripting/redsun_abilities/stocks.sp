@@ -804,9 +804,7 @@ int CreateParticleEffect(const char[] effectName = "", const float position[3] =
 			TeleportEntity(particle, pos, NULL_VECTOR, NULL_VECTOR);
 		}
 		
-		SetEntPropFloat(particle, Prop_Data, "m_flSimulationTime", GetGameTime());
-		DispatchKeyValue(particle, "targetname", "rpg_fortress");
-
+		//SetEntPropFloat(particle, Prop_Data, "m_flSimulationTime", GetGameTime());
 		DispatchKeyValue(particle, "effect_name", effectName[0] ? effectName : "3rd_trail");
 		DispatchSpawn(particle);
 
@@ -842,6 +840,7 @@ int CreateParticleEffect(const char[] effectName = "", const float position[3] =
 				FormatEx(buffer, sizeof(buffer), "OnUser1 !self:Kill::%f:1", duration);
 				SetVariantString(buffer);
 				AcceptEntityInput(particle, "AddOutput");
+				AcceptEntityInput(particle, "FireUser1");
 			}
 		}	
 	}
@@ -1027,8 +1026,8 @@ void ApplyAllyHealEvent(int healer, int patient, int amount)
 {
 	Event event = CreateEvent("player_healed", true);
 
-	event.SetInt("healer", healer);
-	event.SetInt("patient", patient);
+	event.SetInt("healer", GetClientUserId(healer));
+	event.SetInt("patient", GetClientUserId(patient));
 	event.SetInt("amount", amount);
 
 	event.Fire();
