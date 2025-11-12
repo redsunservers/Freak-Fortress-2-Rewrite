@@ -76,6 +76,10 @@ void SDKHooks_EntityCreated(int entity, const char[] classname)
 	{
 		SDKHook(entity, SDKHook_OnTakeDamage, OnObjectTakeDamage);
 	}
+	else if(!StrContains(classname, "tf_projectile_"))
+	{
+		SDKHook(entity, SDKHook_StartTouchPost, OnProjectileTouch);
+	}
 }
 
 static Action OnPreThink(int client)
@@ -118,6 +122,19 @@ static Action OnObjectTakeDamage(int victim, int &attacker, int &inflictor, floa
 	UpdateAction(action, CustomAttrib_ObjectTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom));
 	
 	return action;
+}
+
+static void OnProjectileTouch(int entity, int target)
+{
+	int owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+	if(owner > 0 && owner <= MaxClients)
+	{
+		int weapon = GetEntPropEnt(entity, Prop_Send, "m_hOriginalLauncher");
+		if(weapon != -1)
+		{
+			CustomAttrib_ProjectileTouch(owner, weapon, entity);
+		}
+	}
 }
 
 static Action HookSound(int clients[MAXPLAYERS], int &numClients, char sample[256], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[256], int &seed)

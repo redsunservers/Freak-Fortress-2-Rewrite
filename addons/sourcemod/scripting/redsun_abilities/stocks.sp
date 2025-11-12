@@ -1033,6 +1033,23 @@ void ApplyAllyHealEvent(int healer, int patient, int amount)
 	event.Fire();
 }
 
+stock void TF2_Explode(int iAttacker = -1, float flPos[3], float flDamage, float flRadius, const char[] strParticle, const char[] strSound)
+{
+	int iBomb = CreateEntityByName("tf_generic_bomb");
+	DispatchKeyValueVector(iBomb, "origin", flPos);
+	DispatchKeyValueFloat(iBomb, "damage", flDamage);
+	DispatchKeyValueFloat(iBomb, "radius", flRadius);
+	DispatchKeyValue(iBomb, "health", "1");
+	DispatchKeyValue(iBomb, "explode_particle", strParticle);
+	DispatchKeyValue(iBomb, "sound", strSound);
+	DispatchSpawn(iBomb);
+
+	if (iAttacker == -1)
+		AcceptEntityInput(iBomb, "Detonate");
+	else
+		SDKHooks_TakeDamage(iBomb, 0, iAttacker, 9999.0);
+}
+
 bool Trace_WallsOnly(int entity, int contentsMask)
 {
 	return false;

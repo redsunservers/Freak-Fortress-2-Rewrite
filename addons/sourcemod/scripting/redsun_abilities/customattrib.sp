@@ -73,6 +73,18 @@ void CustomAttrib_AllPluginsLoaded()
 	attrib.SetCustom("description_ff2_string", "x%s climb horizontal velocity multiplier");
 	attrib.Register();
 
+	attrib.SetName("projectile explodes");
+	attrib.SetClass("redsun.projectileexplodes");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "Projectile explodes dealing %s damage");
+	attrib.Register();
+
+	attrib.SetName("heal on any hit");
+	attrib.SetClass("redsun.healanyhit");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "Restores %s health on dealing damage");
+	attrib.Register();
+
 	delete attrib;
 }
 
@@ -103,6 +115,9 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 		if(Attrib_Get(weapon, "ignite on hit", value))
 			TF2_IgnitePlayer(victim, attacker, value);
 	}
+	
+	if(Attrib_FindOnPlayer(attacker, "heal on any hit", value))
+		SetEntityHealth(client, GetClientHealth(client) + RoundFloat(value));
 
 	return action;
 }
@@ -135,7 +150,7 @@ stock Action CustomAttrib_ObjectTakeDamage(int victim, int &attacker, int &infli
 	return action;
 }
 
-stock void CustomAttrib_PlayerRunCmd(int client)
+void CustomAttrib_PlayerRunCmd(int client)
 {
 	if(WallClimbCombo[client])
 	{
@@ -144,7 +159,7 @@ stock void CustomAttrib_PlayerRunCmd(int client)
 	}
 }
 
-stock void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
+void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 {
 	float value;
 	if(Attrib_Get(weapon, "wall climb", value))
@@ -211,7 +226,20 @@ stock void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 	}
 }
 
-stock void CustomAttrib_DeployBanner(int client)
+void CustomAttrib_ProjectileTouch(int client, int weapon, int projectile)
+{
+	float value;
+	if(Attrib_Get(weapon, "projectile explodes", value))
+	{
+		TF2_AddCondition(client, TFCond_Buffed, 0.01);
+
+		float pos[3];
+		GetEntPropVector(weapon, Prop_Send, "m_vecOrigin", pos);
+		TF2_Explode(client, projectile, value, 150.0, "ExplosionCore_MidAir", "Weapon_Airstrike.Explosion");
+	}
+}
+
+void CustomAttrib_DeployBanner(int client)
 {
 	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 
