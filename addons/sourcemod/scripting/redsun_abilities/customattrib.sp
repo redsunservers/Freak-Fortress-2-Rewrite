@@ -85,6 +85,14 @@ void CustomAttrib_AllPluginsLoaded()
 	attrib.SetCustom("description_ff2_string", "Restores %s health on dealing damage");
 	attrib.Register();
 
+	attrib.SetClass("redsun.displayonly");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "%s");
+	attrib.SetName("A DISPLAY ONLY");
+	attrib.Register();
+	attrib.SetName("B DISPLAY ONLY");
+	attrib.Register();
+
 	delete attrib;
 }
 
@@ -92,9 +100,9 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 {
 	Action action;
 
+	float value;
 	if(weapon != -1 && HasEntProp(weapon, Prop_Send, "m_AttributeList"))
 	{
-		float value;
 		if(Attrib_Get(weapon, "convert team on hit", value))
 		{
 			UpdateAction(action, Announcer_ConvertPlayer(value, victim, attacker, damage, damagetype, weapon, critType));
@@ -116,8 +124,12 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 			TF2_IgnitePlayer(victim, attacker, value);
 	}
 	
-	if(Attrib_FindOnPlayer(attacker, "heal on any hit", value))
-		SetEntityHealth(client, GetClientHealth(client) + RoundFloat(value));
+	if(attacker > 0 && attacker <= MaxClients)
+	{
+		value = Attrib_FindOnPlayer(attacker, "heal on any hit");
+		if(value)
+			SetEntityHealth(attacker, GetClientHealth(attacker) + RoundFloat(value));
+	}
 
 	return action;
 }
@@ -164,15 +176,14 @@ void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 	float value;
 	if(Attrib_Get(weapon, "wall climb", value))
 	{
-		int health = RoundFloat(value);
 		bool buffed = TF2_IsPlayerInCondition(client, TFCond_CritCola);
 
-		if(!buffed && GetClientHealth(client) <= health)
+		if(!buffed && GetClientHealth(client) <= RoundToCeil(value))
 			return;
 
 		if(!buffed && Attrib_Get(weapon, "wall climb limit", value))
 		{
-			if(RoundFloat(value) >= WallClimbCombo[client])
+			if(RoundFloat(value) <= WallClimbCombo[client])
 				return;
 		}
 
@@ -187,8 +198,8 @@ void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 			int entity = TR_GetEntityIndex(trace);
 			
 			char classname[64];
-			GetEdictClassname(entity, classname, sizeof(classname));
-			if(strcmp(classname, "worldspawn") != 0 && strncmp(classname, "prop_", 5) != 0)
+			GetEntityClassname(entity, classname, sizeof(classname));
+			if(!StrEqual(classname, "worldspawn") && StrContains(classname, "prop_") == -1)
 				return;
 			
 			TR_GetPlaneNormal(trace, vec);
@@ -196,7 +207,7 @@ void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 
 			if((vec[0] < 30.0 || vec[0] > 330.0) && vec[0] > -30.0)
 			{
-				TR_GetEndPosition(vec);
+				TR_GetEndPosition(vec, trace);
 				float dist = GetVectorDistance(pos, vec, true);
 				if(dist < 10000.0)
 				{
@@ -214,8 +225,8 @@ void CustomAttrib_CalcIsAttackCritical(int client, int weapon)
 					
 					WallClimbCombo[client]++;
 
-					if(!buffed)
-						SDKHooks_TakeDamage(client, 0, client, float(health), DMG_PREVENT_PHYSICS_FORCE);
+					if(!buffed && value)
+						SDKHooks_TakeDamage(client, 0, client, value, DMG_PREVENT_PHYSICS_FORCE);
 					
 					SetEntityFlags(client, GetEntityFlags(client) & ~FL_ONGROUND);
 				}
@@ -234,8 +245,8 @@ void CustomAttrib_ProjectileTouch(int client, int weapon, int projectile)
 		TF2_AddCondition(client, TFCond_Buffed, 0.01);
 
 		float pos[3];
-		GetEntPropVector(weapon, Prop_Send, "m_vecOrigin", pos);
-		TF2_Explode(client, projectile, value, 150.0, "ExplosionCore_MidAir", "Weapon_Airstrike.Explosion");
+		GetEntPropVector(projectile, Prop_Send, "m_vecOrigin", pos);
+		TF2_Explode(client, pos, value, 150.0, "ExplosionCore_MidAir", "Weapon_Airstrike.Explosion");
 	}
 }
 

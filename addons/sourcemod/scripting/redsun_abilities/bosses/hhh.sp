@@ -186,11 +186,11 @@ static void HHH_GhostFrame(DataPack pack)
 					
 					while((building = FindEntityByClassname(building, "obj_*")) > MaxClients)
 					{
-						bool bLinked = false;
+						bool linked = false;
 						if(GetEntProp(building, Prop_Send, "m_iTeamNum") != GetClientTeam(client))
 						{
 							float targetOrigin[3];
-							GetEntPropVector(building, Prop_Send, "m_origin", targetOrigin);
+							GetEntPropVector(building, Prop_Send, "m_vecOrigin", targetOrigin);
 							
 							//Teleporters are tiny, so the beam must be down low
 							char classname[32];
@@ -202,7 +202,7 @@ static void HHH_GhostFrame(DataPack pack)
 							
 							if(GetVectorDistance(origin, targetOrigin, true) <= radius && IsPointsClear(origin, targetOrigin))
 							{
-								bLinked = true;
+								linked = true;
 
 								if(ParticleRef[building] == INVALID_ENT_REFERENCE)
 								{
@@ -212,7 +212,7 @@ static void HHH_GhostFrame(DataPack pack)
 								SDKHooks_TakeDamage(building, client, client, damage * buildMulti, DMG_PREVENT_PHYSICS_FORCE);
 							}
 								
-							if(!bLinked && ParticleRef[building] != INVALID_ENT_REFERENCE)
+							if(!linked && ParticleRef[building] != INVALID_ENT_REFERENCE)
 							{
 								Timer_RemoveEntity(null, ParticleRef[building]);
 								ParticleRef[building] = INVALID_ENT_REFERENCE;

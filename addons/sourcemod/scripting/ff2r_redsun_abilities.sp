@@ -210,6 +210,7 @@ public void OnEntityDestroyed(int entity)
 
 public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] weaponname, bool &result)
 {
+	CustomAttrib_CalcIsAttackCritical(client, weapon);
 	CustomMelee_CalcIsAttackCritical(weapon, weaponname);
 	return Plugin_Continue;
 }
