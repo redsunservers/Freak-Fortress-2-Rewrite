@@ -104,6 +104,20 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 {
 	Action action;
 
+	if(inflictor != -1 && FF2R_GetBossData(victim))
+	{
+		char classname[32];
+		if(GetEntityClassname(inflictor, classname, sizeof(classname)) && !StrContains(classname, "obj_sentrygun"))
+		{
+			float pos1[3], pos2[3];
+			if(GetVectorDistance(pos1, pos2, true) > 50000.0)
+			{
+				action = Plugin_Changed;
+				damagetype |= DMG_PREVENT_PHYSICS_FORCE;
+			}
+		}
+	}
+
 	UpdateAction(action, CustomAttrib_PlayerTakeDamage(victim, attacker, inflictor, damage, damagetype, weapon, damageForce, damagePosition, damagecustom, critType));
 	UpdateAction(action, Announcer_PlayerTakeDamage(victim, attacker, damage));
 	UpdateAction(action, Sarysapub1_TakeDamage(victim, attacker, inflictor, damage, damagetype));
