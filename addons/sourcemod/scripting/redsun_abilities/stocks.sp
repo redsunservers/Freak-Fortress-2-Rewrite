@@ -1012,7 +1012,7 @@ bool IsPointsClear(const float pos1[3], const float pos2[3])
 void ScreenFade(int client, int duration, int time, int flags, int r, int g, int b, int a)
 {
 	BfWrite bf = view_as<BfWrite>(StartMessageOne("Fade", client));
-	bf.WriteShort(duration * 500);
+	bf.WriteShort(duration);
 	bf.WriteShort(time);
 	bf.WriteShort(flags);
 	bf.WriteByte(r);

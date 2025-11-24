@@ -241,7 +241,7 @@ static void HHH_GhostFrame(DataPack pack)
 							ScreenFade(spooked[i], 1000, 0, 1, 160, 56, 204, 160);
 							
 							//Attempt to change to a random weapon slot
-							FakeClientCommand(spooked[i], "slot%d", GetRandomInt(1, 3));
+							ClientCommand(spooked[i], "slot%d", GetRandomInt(1, 3));
 						}
 
 						FF2R_EmitBossSound(spooked, length, "sound_hhh_ghost", client);

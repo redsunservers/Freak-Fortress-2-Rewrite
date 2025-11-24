@@ -85,6 +85,12 @@ void CustomAttrib_AllPluginsLoaded()
 	attrib.SetCustom("description_ff2_string", "Restores %s health on dealing damage");
 	attrib.Register();
 
+	attrib.SetName("extra damage falloff");
+	attrib.SetClass("redsun.sniperdmgfalloff");
+	attrib.SetDescriptionFormat("additive");
+	attrib.SetCustom("description_ff2_string", "Damage is affected by range");
+	attrib.Register();
+
 	attrib.SetClass("redsun.displayonly");
 	attrib.SetDescriptionFormat("additive");
 	attrib.SetCustom("description_ff2_string", "%s");
@@ -122,6 +128,25 @@ stock Action CustomAttrib_PlayerTakeDamage(int victim, int &attacker, int &infli
 
 		if(Attrib_Get(weapon, "ignite on hit", value))
 			TF2_IgnitePlayer(victim, attacker, value);
+
+		if(Attrib_Get(weapon, "extra damage falloff", value))
+		{
+			float pos1[3], pos2[3];
+			GetClientAbsOrigin(victim, pos1);
+			GetClientAbsOrigin(attacker, pos2);
+
+			value *= value;
+
+			float distance = GetVectorDistance(pos1, pos2, true);
+			if(distance > value)
+			{
+				float nerf = 1.0 + ((((distance - value) / value)) * 0.5);
+				if(nerf > 2.0)
+					nerf = 2.0;
+				
+				damage /= nerf;
+			}
+		}
 	}
 	
 	if(attacker > 0 && attacker <= MaxClients)

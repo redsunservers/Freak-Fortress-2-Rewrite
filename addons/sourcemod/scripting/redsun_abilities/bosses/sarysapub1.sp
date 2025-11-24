@@ -854,10 +854,10 @@ static bool RW_IsValidHomingTarget(int target, int owner)
  */
 Action Sarysapub1_TakeDamage(int victim, int& attacker, int& inflictor, float& damage, int& damagetype)
 {
-	if (RP_NoFallDamage && !attacker && (damagetype & DMG_FALL))
+	if (RP_NoFallDamage && (damagetype & DMG_FALL))
 	{
-		damage = 0.0;
-		return Plugin_Handled;
+		damage = 1.0;
+		return Plugin_Changed;
 	}
 	
 	if (RW_ActiveThisRound)
