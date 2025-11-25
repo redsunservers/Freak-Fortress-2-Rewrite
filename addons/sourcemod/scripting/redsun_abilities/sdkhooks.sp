@@ -110,6 +110,8 @@ public Action TF2_OnTakeDamage(int victim, int &attacker, int &inflictor, float 
 		if(GetEntityClassname(inflictor, classname, sizeof(classname)) && !StrContains(classname, "obj_sentrygun"))
 		{
 			float pos1[3], pos2[3];
+			GetClientAbsOrigin(victim, pos1);
+			GetEntPropVector(inflictor, Prop_Send, "m_vecOrigin", pos2);
 			if(GetVectorDistance(pos1, pos2, true) > 50000.0)
 			{
 				action = Plugin_Changed;
