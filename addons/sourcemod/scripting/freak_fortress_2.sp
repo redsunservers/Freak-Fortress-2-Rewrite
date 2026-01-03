@@ -157,6 +157,7 @@ enum struct SoundEnum
 }
 
 public const char SndExts[][] = { ".mp3", ".wav" };
+public const char TFClassName[][] = { "custom", "scout", "sniper", "soldier", "demoman", "medic", "heavy", "pyro", "spy", "engineer" };
 
 public const int TeamColors[][] =
 {
@@ -185,11 +186,14 @@ enum
 	BossKnockback,
 	
 	BossVsBoss,
+	BossTeam,
 	SpecTeam,
 	CaptureTime,
 	CaptureAlive,
 	CaptureDome,
 	CaptureDomeTime,
+	CaptureDomeStyle,
+	CaptureDomeRadius,
 	HealthBar,
 	RefreshDmg,
 	RefreshTime,
